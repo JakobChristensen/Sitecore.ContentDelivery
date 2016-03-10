@@ -32,6 +32,7 @@ Get children of "Home" item:
 /cd/master/children/sitecore/content/Home
 ```
 
+
 # CORS
 To enable CORS, drop this in the web.config:
 
