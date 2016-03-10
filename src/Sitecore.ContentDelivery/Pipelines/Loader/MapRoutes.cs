@@ -32,7 +32,7 @@ namespace Sitecore.ContentDelivery.Pipelines.Loader
                 dataStoreName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "cd/{dataStoreName}/items/{itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "cd/{dataStoreName}/items/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItem",
@@ -47,7 +47,7 @@ namespace Sitecore.ContentDelivery.Pipelines.Loader
                 dataStoreName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", "cd/{dataStoreName}/templates/{templateName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", "cd/{dataStoreName}/templates/{*templateName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplate",

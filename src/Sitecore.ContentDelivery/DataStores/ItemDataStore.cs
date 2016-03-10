@@ -183,6 +183,7 @@ namespace Sitecore.ContentDelivery.DataStores
 
             WriteItemHeader(output, item);
             WriteItemFields(output, requestParameters, item);
+            WriteItemChildren(output, requestParameters, item, requestParameters.Levels);
 
             return output.ToContentResult();
         }
