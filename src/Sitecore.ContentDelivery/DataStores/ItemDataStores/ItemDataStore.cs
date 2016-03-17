@@ -1,8 +1,7 @@
-﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+﻿// © 2015 Sitecore Corporation A/S. All rights reserved.
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -14,12 +13,10 @@ using Sitecore.ContentSearch;
 using Sitecore.ContentSearch.SearchTypes;
 using Sitecore.Data;
 using Sitecore.Data.Items;
-using Sitecore.Extensions.StringExtensions;
 using Sitecore.Resources;
-using Sitecore.Web;
 using Sitecore.Web.UI;
 
-namespace Sitecore.ContentDelivery.DataStores
+namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 {
     public class ItemDataStore : DataStoreBase
     {
@@ -30,6 +27,12 @@ namespace Sitecore.ContentDelivery.DataStores
 
         [NotNull]
         public Database Database { get; }
+
+        [NotNull]
+        public static ICollection<IItemDataStoreFilter> Filters { get; } = new List<IItemDataStoreFilter>();
+
+        [NotNull]
+        public static ICollection<IItemDataStoreWriter> Writers { get; } = new List<IItemDataStoreWriter>();
 
         public override ActionResult GetChildren(RequestParameters requestParameters, string itemName)
         {
@@ -46,43 +49,9 @@ namespace Sitecore.ContentDelivery.DataStores
                 var fieldName = pair.Key;
                 var value = pair.Value;
 
-                if (!fieldName.EndsWith("]"))
+                foreach (var filter in Filters.OrderBy(f => f.Priority))
                 {
-                    children = children.Where(i => i[fieldName] == value);
-                    continue;
-                }
-
-                var n = fieldName.LastIndexOf('[');
-                if (n < 0)
-                {
-                    throw new SyntaxErrorException("[ expected");
-                }
-
-                var op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
-                fieldName = fieldName.Left(n).Trim();
-
-                switch (op)
-                {
-                    case "not":
-                        children = children.Where(i => i[fieldName] != value);
-                        break;
-
-                    case "in":
-                        var l1 = value.Split('|');
-                        children = children.Where(i => l1.Contains(i[fieldName]));
-                        break;
-
-                    case "not in":
-                        var l2 = value.Split('|');
-                        children = children.Where(i => !l2.Contains(i[fieldName]));
-                        break;
-
-                    case "has":
-                        children = children.Where(t => !string.IsNullOrEmpty(t[fieldName]));
-                        break;
-
-                    default:
-                        throw new InvalidOperationException("Unknown operator: " + op);
+                    children = filter.Filter(children, fieldName, value);
                 }
             }
 
@@ -268,8 +237,6 @@ namespace Sitecore.ContentDelivery.DataStores
 
             output.WriteStartArray("fields");
 
-
-
             foreach (var field in template.Fields.OrderBy(f => f.Section.Sortorder).ThenBy(f => f.Section.Name).ThenBy(f => f.Sortorder).ThenBy(f => f.Name))
             {
                 var isOwnField = field.InnerItem.Parent.Parent == template.InnerItem;
@@ -281,16 +248,7 @@ namespace Sitecore.ContentDelivery.DataStores
                 }
 
                 output.WriteStartObject();
-
-                output.WritePropertyString("id", field.ID.ToString());
-                output.WritePropertyString("name", field.Name);
-                output.WritePropertyString("displayName", field.DisplayName);
-                output.WritePropertyString("type", field.Type);
-                output.WritePropertyString("source", field.Source);
-                output.WritePropertyString("sharing", field.IsShared ? "shared" : field.IsUnversioned ? "unversioned" : "versioned");
-                output.WritePropertyString("section", field.Section.Name);
-                output.WritePropertyString("kind", isOwnField ? "own" : isSystemField ? "system" : "inherited");
-
+                Writers.OrderBy(w => w.Priority).ForEach(w => w.WriteTemplateField(output, field, isOwnField, isSystemField));
                 output.WriteEndObject();
             }
 
@@ -346,6 +304,26 @@ namespace Sitecore.ContentDelivery.DataStores
             return output.ToContentResult();
         }
 
+        public static void RegisterFilter([NotNull] IItemDataStoreFilter filter)
+        {
+            Filters.Add(filter);
+        }
+
+        public static void RegisterWriter([NotNull] IItemDataStoreWriter writer)
+        {
+            Writers.Add(writer);
+        }
+
+        public static void UnregisterFilter([NotNull] IItemDataStoreFilter filter)
+        {
+            Filters.Remove(filter);
+        }
+
+        public static void UnregisterWriter([NotNull] IItemDataStoreWriter writer)
+        {
+            Writers.Remove(writer);
+        }
+
         protected virtual IQueryable<SearchResultItem> Filter(IQueryable<SearchResultItem> queryable, RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Path))
@@ -362,49 +340,9 @@ namespace Sitecore.ContentDelivery.DataStores
                 var fieldName = pair.Key;
                 var value = pair.Value;
 
-                if (fieldName == "query")
+                foreach (var filter in Filters.OrderBy(f => f.Priority))
                 {
-                    queryable = queryable.Where(item => item.Content.Contains(value));
-                    continue;
-                }
-
-                if (!fieldName.EndsWith("]"))
-                {
-                    queryable = queryable.Where(item => item[fieldName] == value);
-                    continue;
-                }
-
-                var n = fieldName.LastIndexOf('[');
-                if (n < 0)
-                {
-                    throw new SyntaxErrorException("[ expected");
-                }
-
-                var op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
-                fieldName = fieldName.Left(n).Trim();
-
-                switch (op)
-                {
-                    case "not":
-                        queryable = queryable.Where(item => item[fieldName] != value);
-                        break;
-
-                    case "in":
-                        var l1 = value.Split('|');
-                        queryable = queryable.Where(item => l1.Contains(item[fieldName]));
-                        break;
-
-                    case "not in":
-                        var l2 = value.Split('|');
-                        queryable = queryable.Where(item => !l2.Contains(item[fieldName]));
-                        break;
-
-                    case "has":
-                        queryable = queryable.Where(item => !string.IsNullOrEmpty(item[fieldName]));
-                        break;
-
-                    default:
-                        throw new InvalidOperationException("Unknown operator: " + op);
+                    queryable = filter.Filter(queryable, fieldName, value);
                 }
             }
 
@@ -521,33 +459,24 @@ namespace Sitecore.ContentDelivery.DataStores
                 if (!includeAllFields)
                 {
                     var fieldDescriptor = request.Fields.First(f => string.Equals(f.FieldName, field.Name, StringComparison.OrdinalIgnoreCase));
-                    switch (fieldDescriptor.Format.ToLowerInvariant())
+
+                    foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
                     {
-                        case "icon16x16":
-                            value = WebUtil.GetFullUrl(Images.GetThemedImageSource(value, ImageDimension.id16x16));
-                            break;
-                        case "icon24x24":
-                            value = WebUtil.GetFullUrl(Images.GetThemedImageSource(value, ImageDimension.id24x24));
-                            break;
-                        case "icon32x32":
-                            value = WebUtil.GetFullUrl(Images.GetThemedImageSource(value, ImageDimension.id32x32));
-                            break;
-                        case "icon48x48":
-                            value = WebUtil.GetFullUrl(Images.GetThemedImageSource(value, ImageDimension.id48x48));
-                            break;
-                        case "url":
-                            value = WebUtil.GetFullUrl(value);
-                            break;
+                        string formattedValue;
+                        if (!formatter.TryFormat(fieldDescriptor, value, out formattedValue))
+                        {
+                            continue;
+                        }
+
+                        value = formattedValue;
+                        break;
                     }
                 }
 
                 if (includeFieldInfo)
                 {
                     output.WriteStartObject();
-                    output.WritePropertyString("id", field.ID.ToString());
-                    output.WritePropertyString("name", field.Name);
-                    output.WritePropertyString("displayName", field.DisplayName);
-                    output.WritePropertyString("value", value);
+                    Writers.OrderBy(w => w.Priority).ForEach(w => w.WriteItemField(output, field, value));
                     output.WriteEndObject();
                 }
                 else
@@ -568,27 +497,13 @@ namespace Sitecore.ContentDelivery.DataStores
 
         protected virtual void WriteItemHeader(JsonTextWriter output, Item item)
         {
-            output.WritePropertyString("id", item.ID.ToString());
-            output.WritePropertyString("name", item.Name);
-            output.WritePropertyString("displayName", item.DisplayName);
-            output.WritePropertyString("database", item.Database.Name);
-            output.WritePropertyString("dataStore", DataStoreName);
-            output.WritePropertyString("smallIcon", Images.GetThemedImageSource(item.Appearance.Icon, ImageDimension.id16x16));
-            output.WritePropertyString("largeIcon", Images.GetThemedImageSource(item.Appearance.Icon, ImageDimension.id32x32));
-            output.WritePropertyString("path", item.Paths.Path);
-            output.WritePropertyString("templateId", item.TemplateID.ToString());
-            output.WritePropertyString("templateName", item.TemplateName);
-            output.WritePropertyString("childCount", item.Children.Count);
+            Writers.OrderBy(w => w.Priority).ForEach(w => w.WriteItemHeader(output, item));
         }
 
         protected virtual void WriteMetaData(JsonTextWriter output)
         {
             output.WriteStartObject("metadata");
-
-            output.WritePropertyString("version", "1");
-            output.WritePropertyString("user", Context.GetUserName());
-            output.WritePropertyString("language", Context.Language.Name);
-
+            Writers.OrderBy(w => w.Priority).ForEach(w => w.WriteMetaData(output));
             output.WriteEndObject();
         }
     }

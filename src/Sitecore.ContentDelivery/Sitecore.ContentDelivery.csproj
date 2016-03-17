@@ -57,9 +57,9 @@
       <HintPath>..\..\packages\SC.Sitecore.ContentSearch.Linq.8.1.0.151207\lib\Sitecore.ContentSearch.Linq.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Sitecore.Kernel, Version=8.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\SC.Sitecore.Kernel.8.1.0.151207\lib\Sitecore.Kernel.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="Sitecore.Kernel, Version=7.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\inetpub\wwwroot\Pathfinder\Website\bin\Sitecore.Kernel.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -124,16 +124,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\ContentDeliveryController.cs" />
+    <Compile Include="Controllers\ContentDeliveryControllerBase.cs" />
     <Compile Include="DataStores\FieldDescriptor.cs" />
+    <Compile Include="DataStores\ItemDataStores\ItemDataStoreFilter.cs" />
+    <Compile Include="DataStores\Formatters\FieldValueFormatter.cs" />
+    <Compile Include="DataStores\Formatters\IFieldValueFormatter.cs" />
+    <Compile Include="DataStores\ItemDataStores\IItemDataStoreFilter.cs" />
+    <Compile Include="DataStores\ItemDataStores\IItemDataStoreWriter.cs" />
     <Compile Include="DataStores\JsonContentResultWriter.cs" />
     <Compile Include="DataStores\RequestParameters.cs" />
     <Compile Include="DataStores\DataStoreBase.cs" />
-    <Compile Include="DataStores\DataStoreManager.cs" />
+    <Compile Include="DataStores\ContentDeliveryManager.cs" />
     <Compile Include="DataStores\IDataStore.cs" />
-    <Compile Include="DataStores\ItemDataStore.cs" />
+    <Compile Include="DataStores\ItemDataStores\ItemDataStore.cs" />
+    <Compile Include="DataStores\ItemDataStores\ItemDataStoreWriter.cs" />
     <Compile Include="Extensions\DatabaseExtensions.cs" />
+    <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\JsonTextWriterExtensions.cs" />
     <Compile Include="Pipelines\Loader\MapRoutes.cs" />
+    <Compile Include="Pipelines\Loader\RegisterDataStores.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -142,6 +151,7 @@
   <ItemGroup>
     <Content Include="App_Config\Include\Sitecore.ContentDelivery\Sitecore.ContentDelivery.config" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

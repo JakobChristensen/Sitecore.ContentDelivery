@@ -1,4 +1,4 @@
-// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+// © 2015 Sitecore Corporation A/S. All rights reserved.
 
 using System;
 using System.IO;
@@ -6,18 +6,15 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
-using System.Web.Security;
 using Newtonsoft.Json.Linq;
 using Sitecore.ContentDelivery.DataStores;
 using Sitecore.Extensions.StringExtensions;
-using Sitecore.SecurityModel.License;
-using Sitecore.Web;
 
 namespace Sitecore.ContentDelivery.Controllers
 {
-    public class ContentDeliveryController : Controller
+    public class ContentDeliveryController : ContentDeliveryControllerBase
     {
-        public ActionResult GetBundle()
+        public virtual ActionResult GetBundle()
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -27,6 +24,7 @@ namespace Sitecore.ContentDelivery.Controllers
 
             var output = new JsonContentResultWriter(new StringWriter());
 
+            // run each bundle entry through the MVC pipeline
             foreach (var key in Request.Form.AllKeys)
             {
                 if (string.IsNullOrEmpty(key))
@@ -44,9 +42,10 @@ namespace Sitecore.ContentDelivery.Controllers
                 var uri = new Uri(url, UriKind.RelativeOrAbsolute);
                 if (!uri.IsAbsoluteUri)
                 {
-                    uri = new Uri("http://127.0.0.1" + url); 
+                    uri = new Uri("http://127.0.0.1" + url);
                 }
 
+                // find the route
                 var textWriter = new StringWriter();
                 var httpContext = new HttpContextWrapper(new HttpContext(new HttpRequest(string.Empty, uri.AbsoluteUri, uri.Query.Mid(1)), new HttpResponse(textWriter)));
                 var routeData = RouteTable.Routes.GetRouteData(httpContext);
@@ -55,14 +54,14 @@ namespace Sitecore.ContentDelivery.Controllers
                     return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Route not found: " + url);
                 }
 
+                // execute the controller
                 var controllerName = routeData.Values["controller"].ToString();
                 var requestContext = new RequestContext(httpContext, routeData);
 
-                var factory = ControllerBuilder.Current.GetControllerFactory();
-                var controller = factory.CreateController(requestContext, controllerName);
-
+                var controller = ControllerBuilder.Current.GetControllerFactory().CreateController(requestContext, controllerName);
                 controller.Execute(requestContext);
 
+                // if empty - write an empty object
                 var result = textWriter.ToString();
                 if (string.IsNullOrEmpty(result))
                 {
@@ -89,7 +88,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return output.ToContentResult();
         }
 
-        public ActionResult GetChildren(string dataStoreName, string itemName)
+        public virtual ActionResult GetChildren(string dataStoreName, string itemName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -97,7 +96,7 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = DataStoreManager.GetDataStore(dataStoreName);
+            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
             if (dataStore == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
@@ -108,7 +107,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return dataStore.GetChildren(requestParameters, itemName);
         }
 
-        public ActionResult GetDataStore(string dataStoreName)
+        public virtual ActionResult GetDataStore(string dataStoreName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -116,7 +115,7 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = DataStoreManager.GetDataStore(dataStoreName);
+            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
             if (dataStore == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
@@ -127,7 +126,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return dataStore.GetDataStore(requestParameters);
         }
 
-        public ActionResult GetItem(string dataStoreName, string itemName)
+        public virtual ActionResult GetItem(string dataStoreName, string itemName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -135,7 +134,7 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = DataStoreManager.GetDataStore(dataStoreName);
+            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
             if (dataStore == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
@@ -146,7 +145,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return dataStore.GetItem(requestParameters, itemName);
         }
 
-        public ActionResult GetItems(string dataStoreName)
+        public virtual ActionResult GetItems(string dataStoreName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -154,7 +153,7 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = DataStoreManager.GetDataStore(dataStoreName);
+            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
             if (dataStore == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
@@ -165,7 +164,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return dataStore.GetItems(requestParameters);
         }
 
-        public ActionResult GetTemplate(string dataStoreName, string templateName)
+        public virtual ActionResult GetTemplate(string dataStoreName, string templateName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -173,7 +172,7 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = DataStoreManager.GetDataStore(dataStoreName);
+            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
             if (dataStore == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
@@ -184,7 +183,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return dataStore.GetTemplate(requestParameters, templateName);
         }
 
-        public ActionResult GetTemplates(string dataStoreName)
+        public virtual ActionResult GetTemplates(string dataStoreName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -192,7 +191,7 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = DataStoreManager.GetDataStore(dataStoreName);
+            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
             if (dataStore == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
@@ -201,53 +200,6 @@ namespace Sitecore.ContentDelivery.Controllers
             var requestParameters = new RequestParameters(Request);
 
             return dataStore.GetTemplates(requestParameters);
-        }
-
-        protected virtual ActionResult AuthenticateUser()
-        {
-            var userName = WebUtil.GetQueryString("username") ?? string.Empty;
-            var password = WebUtil.GetQueryString("password") ?? string.Empty;
-            var authenticationToken = WebUtil.GetQueryString("token") ?? string.Empty;
-
-            if (string.IsNullOrEmpty(authenticationToken) && string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password))
-            {
-                return null;
-            }
-
-            if (!string.IsNullOrEmpty(authenticationToken) && string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password))
-            {
-                // todo: support for authentication tokens
-                if (authenticationToken == "1" || authenticationToken == "test")
-                {
-                    userName = "sitecore\\admin";
-                    password = "b";
-                }
-            }
-
-            if (Context.IsLoggedIn)
-            {
-                if (string.Equals(Context.User.Name, userName, StringComparison.OrdinalIgnoreCase))
-                {
-                    return null;
-                }
-
-                Context.Logout();
-            }
-
-            if (!LicenseManager.HasRuntime)
-            {
-                return new HttpUnauthorizedResult("A required license is missing");
-            }
-
-            var validated = Membership.ValidateUser(userName, password);
-            if (!validated)
-            {
-                return new HttpUnauthorizedResult("Unknown username or password");
-            }
-
-            Security.Authentication.AuthenticationManager.Login(userName, password, true);
-
-            return null;
         }
     }
 }
