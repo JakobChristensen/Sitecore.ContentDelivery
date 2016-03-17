@@ -10,21 +10,21 @@ namespace Sitecore.ContentDelivery.DataStores
         string DataStoreName { get; }
 
         [NotNull]
-        ActionResult GetChildren([NotNull] string itemName);
+        ActionResult GetChildren([NotNull] RequestParameters requestParameters, [NotNull] string itemName);
 
         [NotNull]
-        ActionResult GetDataStore();
+        ActionResult GetDataStore(RequestParameters requestParameters);
 
         [NotNull]
-        ActionResult GetItem([NotNull] string itemName);
+        ActionResult GetItem(RequestParameters requestParameters, [NotNull] string itemName);
 
         [NotNull]
-        ActionResult GetItems();
+        ActionResult GetItems(RequestParameters requestParameters);
 
         [NotNull]
-        ActionResult GetTemplate([NotNull] string templateName);
+        ActionResult GetTemplate(RequestParameters requestParameters, [NotNull] string templateName);
 
         [NotNull]
-        ActionResult GetTemplates();
+        ActionResult GetTemplates(RequestParameters requestParameters);
     }
 }

@@ -124,6 +124,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\ContentDeliveryController.cs" />
+    <Compile Include="DataStores\FieldDescriptor.cs" />
     <Compile Include="DataStores\JsonContentResultWriter.cs" />
     <Compile Include="DataStores\RequestParameters.cs" />
     <Compile Include="DataStores\DataStoreBase.cs" />

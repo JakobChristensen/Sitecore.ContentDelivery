@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Sitecore.Extensions.StringExtensions;
 
 namespace Sitecore.ContentDelivery.DataStores
 {
@@ -28,18 +29,18 @@ namespace Sitecore.ContentDelivery.DataStores
             "levels"
         };
 
-        public RequestParameters()
+        public RequestParameters(HttpRequestBase request)
         {
             var parameters = new Dictionary<string, string>();
 
-            foreach (var key in HttpContext.Current.Request.Form.AllKeys)
+            foreach (var key in request.Form.AllKeys)
             {
-                parameters[key] = HttpContext.Current.Request.Form[key] ?? string.Empty;
+                parameters[key] = request.Form[key] ?? string.Empty;
             }
 
-            foreach (var key in HttpContext.Current.Request.QueryString.AllKeys)
+            foreach (var key in request.QueryString.AllKeys)
             {
-                parameters[key] = HttpContext.Current.Request.QueryString[key] ?? string.Empty;
+                parameters[key] = request.QueryString[key] ?? string.Empty;
             }
 
             Parse(parameters);
@@ -51,9 +52,13 @@ namespace Sitecore.ContentDelivery.DataStores
         }
 
         [NotNull]
-        public List<string> FieldNames { get; } = new List<string>();
+        public List<FieldDescriptor> Fields { get; } = new List<FieldDescriptor>();
+
+        public bool IncludeFieldInfo { get; private set; }
 
         public bool IncludeSystemFields { get; private set; }
+
+        public int Levels { get; private set; }
 
         [NotNull]
         public Dictionary<string, string> Parameters { get; } = new Dictionary<string, string>();
@@ -64,7 +69,6 @@ namespace Sitecore.ContentDelivery.DataStores
         public int Skip { get; private set; }
 
         public int Take { get; private set; }
-        public int Levels { get; private set; }
 
         private void Parse([NotNull] Dictionary<string, string> parameters)
         {
@@ -96,6 +100,15 @@ namespace Sitecore.ContentDelivery.DataStores
                 }
             }
 
+            if (parameters.TryGetValue("fieldinfo", out value))
+            {
+                bool fieldInfo;
+                if (bool.TryParse(value, out fieldInfo))
+                {
+                    IncludeFieldInfo = fieldInfo;
+                }
+            }
+
             if (parameters.TryGetValue("path", out value))
             {
                 Path = value;
@@ -111,7 +124,27 @@ namespace Sitecore.ContentDelivery.DataStores
 
             if (parameters.TryGetValue("fields", out value))
             {
-                FieldNames.AddRange(value.Split(Comma, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()));
+                foreach (var field in value.Split(Comma, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()))
+                {
+                    var fieldName = field;
+                    var format = string.Empty;
+
+                    var n = fieldName.LastIndexOf('[');
+                    if (n >= 0)
+                    {
+                        var m = fieldName.LastIndexOf(']');
+                        if (m < n)
+                        {
+                            throw new InvalidOperationException("] expected");
+                        }
+
+                        format = fieldName.Mid(n + 1, m - n - 1).Trim();
+                        fieldName = fieldName.Left(n).Trim();
+                    }
+
+                    var fieldDescriptor = new FieldDescriptor(fieldName, format);
+                    Fields.Add(fieldDescriptor);
+                }
             }
 
             IncludeSystemFields = parameters.Keys.Any(k => string.Equals(k, "systemfields", StringComparison.OrdinalIgnoreCase));

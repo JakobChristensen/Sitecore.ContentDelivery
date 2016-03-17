@@ -10,6 +10,12 @@ namespace Sitecore.ContentDelivery.Pipelines.Loader
     {
         public void Process([NotNull] PipelineArgs args)
         {
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetBundle", "cd/bundle", new
+            {
+                controller = "ContentDelivery",
+                action = "GetBundle"
+            });
+
             RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDataStore", "cd/{dataStoreName}", new
             {
                 controller = "ContentDelivery",

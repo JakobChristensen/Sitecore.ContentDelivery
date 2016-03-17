@@ -13,16 +13,16 @@ namespace Sitecore.ContentDelivery.DataStores
 
         public string DataStoreName { get; }
 
-        public abstract ActionResult GetChildren(string itemName);
+        public abstract ActionResult GetChildren(RequestParameters requestParameters, string itemName);
 
-        public abstract ActionResult GetDataStore();
+        public abstract ActionResult GetDataStore(RequestParameters requestParameters);
 
-        public abstract ActionResult GetItems();
+        public abstract ActionResult GetItems(RequestParameters requestParameters);
 
-        public abstract ActionResult GetTemplate(string templateName);
+        public abstract ActionResult GetTemplate(RequestParameters requestParameters, string templateName);
 
-        public abstract ActionResult GetItem(string itemName);
+        public abstract ActionResult GetItem(RequestParameters requestParameters, string itemName);
 
-        public abstract ActionResult GetTemplates();
+        public abstract ActionResult GetTemplates(RequestParameters requestParameters);
     }
 }
