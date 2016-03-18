@@ -5,7 +5,7 @@ using System.Text;
 using System.Web.Mvc;
 using Newtonsoft.Json;
 
-namespace Sitecore.ContentDelivery.DataStores
+namespace Sitecore.ContentDelivery.Web
 {
     public class JsonContentResultWriter : JsonTextWriter
     {

@@ -1,6 +1,5 @@
 ﻿// © 2015 Sitecore Corporation A/S. All rights reserved.
 
-using Sitecore.ContentDelivery.DataStores;
 using Sitecore.ContentDelivery.DataStores.Formatters;
 using Sitecore.ContentDelivery.DataStores.ItemDataStores;
 using Sitecore.Pipelines;

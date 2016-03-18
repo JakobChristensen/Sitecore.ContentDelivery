@@ -1,6 +1,7 @@
 ﻿// © 2015 Sitecore Corporation A/S. All rights reserved.
 
 using System.Web.Mvc;
+using Sitecore.ContentDelivery.Web;
 
 namespace Sitecore.ContentDelivery.DataStores
 {

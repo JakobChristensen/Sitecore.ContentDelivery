@@ -2,9 +2,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Sitecore.ContentDelivery.DataStores;
 using Sitecore.ContentDelivery.DataStores.Formatters;
 
-namespace Sitecore.ContentDelivery.DataStores
+namespace Sitecore.ContentDelivery
 {
     public static class ContentDeliveryManager
     {

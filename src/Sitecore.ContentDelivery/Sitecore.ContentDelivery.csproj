@@ -50,35 +50,30 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Sitecore.ContentSearch, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\SC.Sitecore.ContentSearch.8.1.0.151207\lib\Sitecore.ContentSearch.dll</HintPath>
+      <HintPath>..\..\packages\SC.Sitecore.ContentSearch.8.0.0.150427\lib\Sitecore.ContentSearch.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.ContentSearch.Linq, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\SC.Sitecore.ContentSearch.Linq.8.1.0.151207\lib\Sitecore.ContentSearch.Linq.dll</HintPath>
+      <HintPath>..\..\packages\SC.Sitecore.ContentSearch.Linq.8.0.0.150427\lib\Sitecore.ContentSearch.Linq.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Sitecore.Kernel, Version=7.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\inetpub\wwwroot\Pathfinder\Website\bin\Sitecore.Kernel.dll</HintPath>
+    <Reference Include="Sitecore.Kernel, Version=8.0.5138.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\SC.Sitecore.Kernel.8.0.0.150427\lib\Sitecore.Kernel.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Web.DynamicData" />
-    <Reference Include="System.Web.Entity" />
-    <Reference Include="System.Web.ApplicationServices" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Web.Abstractions" />
     <Reference Include="System.Web.Routing" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
-    <Reference Include="System.EnterpriseServices" />
     <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>False</Private>
       <HintPath>..\..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
@@ -125,16 +120,16 @@
   <ItemGroup>
     <Compile Include="Controllers\ContentDeliveryController.cs" />
     <Compile Include="Controllers\ContentDeliveryControllerBase.cs" />
-    <Compile Include="DataStores\FieldDescriptor.cs" />
+    <Compile Include="DataStores\FieldInfo.cs" />
     <Compile Include="DataStores\ItemDataStores\ItemDataStoreFilter.cs" />
     <Compile Include="DataStores\Formatters\FieldValueFormatter.cs" />
     <Compile Include="DataStores\Formatters\IFieldValueFormatter.cs" />
     <Compile Include="DataStores\ItemDataStores\IItemDataStoreFilter.cs" />
     <Compile Include="DataStores\ItemDataStores\IItemDataStoreWriter.cs" />
-    <Compile Include="DataStores\JsonContentResultWriter.cs" />
-    <Compile Include="DataStores\RequestParameters.cs" />
+    <Compile Include="Web\JsonContentResultWriter.cs" />
+    <Compile Include="Web\RequestParameters.cs" />
     <Compile Include="DataStores\DataStoreBase.cs" />
-    <Compile Include="DataStores\ContentDeliveryManager.cs" />
+    <Compile Include="ContentDeliveryManager.cs" />
     <Compile Include="DataStores\IDataStore.cs" />
     <Compile Include="DataStores\ItemDataStores\ItemDataStore.cs" />
     <Compile Include="DataStores\ItemDataStores\ItemDataStoreWriter.cs" />

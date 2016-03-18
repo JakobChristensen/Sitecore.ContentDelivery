@@ -6,6 +6,6 @@ namespace Sitecore.ContentDelivery.DataStores.Formatters
     {
         double Priority { get; }
 
-        bool TryFormat([NotNull] FieldDescriptor fieldDescriptor, [NotNull] string value, [NotNull] out string formattedValue);
+        bool TryFormat([NotNull] FieldInfo fieldInfo, [NotNull] string value, [NotNull] out string formattedValue);
     }
 }

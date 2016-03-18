@@ -4,9 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Sitecore.ContentDelivery.DataStores;
 using Sitecore.Extensions.StringExtensions;
 
-namespace Sitecore.ContentDelivery.DataStores
+namespace Sitecore.ContentDelivery.Web
 {
     public class RequestParameters
     {
@@ -52,7 +53,7 @@ namespace Sitecore.ContentDelivery.DataStores
         }
 
         [NotNull]
-        public List<FieldDescriptor> Fields { get; } = new List<FieldDescriptor>();
+        public List<FieldInfo> Fields { get; } = new List<FieldInfo>();
 
         public bool IncludeFieldInfo { get; private set; }
 
@@ -142,7 +143,7 @@ namespace Sitecore.ContentDelivery.DataStores
                         fieldName = fieldName.Left(n).Trim();
                     }
 
-                    var fieldDescriptor = new FieldDescriptor(fieldName, format);
+                    var fieldDescriptor = new FieldInfo(fieldName, format);
                     Fields.Add(fieldDescriptor);
                 }
             }

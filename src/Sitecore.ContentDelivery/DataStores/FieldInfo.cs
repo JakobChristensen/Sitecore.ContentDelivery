@@ -2,9 +2,9 @@
 
 namespace Sitecore.ContentDelivery.DataStores
 {
-    public class FieldDescriptor
+    public class FieldInfo
     {
-        public FieldDescriptor([NotNull] string fieldName, [NotNull] string format)
+        public FieldInfo([NotNull] string fieldName, [NotNull] string format)
         {
             FieldName = fieldName;
             Format = format;

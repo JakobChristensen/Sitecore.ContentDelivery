@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using Newtonsoft.Json;
 using Sitecore.Configuration;
 using Sitecore.ContentDelivery.Extensions;
+using Sitecore.ContentDelivery.Web;
 using Sitecore.ContentSearch;
 using Sitecore.ContentSearch.SearchTypes;
 using Sitecore.Data;
