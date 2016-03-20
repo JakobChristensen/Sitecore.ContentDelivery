@@ -83,7 +83,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 output.WriteStartObject();
                 WriteItemHeader(output, child);
                 WriteItemFields(output, requestParameters, child);
-                WriteItemChildren(output, requestParameters, child, requestParameters.Levels);
+                WriteItemChildren(output, requestParameters, child, requestParameters.Children);
                 output.WriteEndObject();
             }
 
@@ -152,7 +152,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             WriteItemHeader(output, item);
             WriteItemFields(output, requestParameters, item);
-            WriteItemChildren(output, requestParameters, item, requestParameters.Levels);
+            WriteItemChildren(output, requestParameters, item, requestParameters.Children);
 
             return output.ToContentResult();
         }
@@ -197,7 +197,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 output.WriteStartObject();
                 WriteItemHeader(output, item);
                 WriteItemFields(output, requestParameters, item);
-                WriteItemChildren(output, requestParameters, item, requestParameters.Levels);
+                WriteItemChildren(output, requestParameters, item, requestParameters.Children);
                 output.WriteEndObject();
             }
 
@@ -398,9 +398,9 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             }
         }
 
-        protected virtual void WriteItemChildren(JsonTextWriter output, RequestParameters request, Item item, int levels)
+        protected virtual void WriteItemChildren(JsonTextWriter output, RequestParameters request, Item item, int children)
         {
-            if (levels == 0 || !item.Children.Any())
+            if (children == 0 || !item.Children.Any())
             {
                 return;
             }
@@ -412,7 +412,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 output.WriteStartObject();
                 WriteItemHeader(output, child);
                 WriteItemFields(output, request, child);
-                WriteItemChildren(output, request, child, levels - 1);
+                WriteItemChildren(output, request, child, children - 1);
                 output.WriteEndObject();
             }
 
@@ -464,7 +464,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                     foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
                     {
                         string formattedValue;
-                        if (!formatter.TryFormat(fieldDescriptor, value, out formattedValue))
+                        if (!formatter.TryFormat(field, fieldDescriptor, value, out formattedValue))
                         {
                             continue;
                         }

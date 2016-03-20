@@ -5,6 +5,8 @@ using Sitecore.ContentDelivery.Extensions;
 using Sitecore.Data.Fields;
 using Sitecore.Data.Items;
 using Sitecore.Resources;
+using Sitecore.Resources.Media;
+using Sitecore.Web;
 using Sitecore.Web.UI;
 
 namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
@@ -33,6 +35,11 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             output.WritePropertyString("templateId", item.TemplateID.ToString());
             output.WritePropertyString("templateName", item.TemplateName);
             output.WritePropertyString("childCount", item.Children.Count);
+
+            if (item.Paths.IsMediaItem)
+            {
+                output.WritePropertyString("mediaurl", WebUtil.GetFullUrl(MediaManager.GetMediaUrl(new MediaItem(item))));
+            }
         }
 
         public virtual void WriteMetaData(JsonTextWriter output)

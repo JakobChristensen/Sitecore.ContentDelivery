@@ -1,9 +1,11 @@
 // © 2015 Sitecore Corporation A/S. All rights reserved.
 
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Sitecore.ContentSearch.SearchTypes;
+using Sitecore.Data;
 using Sitecore.Data.Items;
 using Sitecore.Extensions.StringExtensions;
 
@@ -59,7 +61,41 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             if (!fieldName.EndsWith("]"))
             {
-                return queryable.Where(item => item[fieldName] == value);
+                switch (fieldName.ToLowerInvariant())
+                {
+                    case "id":
+                        Guid itemGuid;
+                        if (!Guid.TryParse(value, out itemGuid))
+                        {
+                            throw new InvalidOperationException("Not a valid guid");
+                        }
+
+                        var itemId = new ID(itemGuid);
+                        return queryable.Where(item => item.TemplateId == itemId);
+
+                    case "name":
+                        return queryable.Where(item => item.Name == value);
+
+                    case "path":
+                        return queryable.Where(item => item.Path == value);
+
+                    case "templateid":
+                        Guid templateGuid;
+                        if (!Guid.TryParse(value, out templateGuid))
+                        {
+                            throw new InvalidOperationException("Not a valid guid");
+                        }
+
+                        var templateId = new ID(templateGuid);
+                        return queryable.Where(item => item.TemplateId == templateId);
+
+                    case "templatename":
+                        return queryable.Where(item => item.TemplateName == value);
+
+                    default:
+                        return queryable.Where(item => item[fieldName] == value);
+
+                }
             }
 
             var n = fieldName.LastIndexOf('[');

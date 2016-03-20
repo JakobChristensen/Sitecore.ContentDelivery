@@ -27,7 +27,7 @@ namespace Sitecore.ContentDelivery.Web
             "domain",
             "token",
             "path",
-            "levels"
+            "children"
         };
 
         public RequestParameters(HttpRequestBase request)
@@ -59,7 +59,7 @@ namespace Sitecore.ContentDelivery.Web
 
         public bool IncludeSystemFields { get; private set; }
 
-        public int Levels { get; private set; }
+        public int Children { get; private set; }
 
         [NotNull]
         public Dictionary<string, string> Parameters { get; } = new Dictionary<string, string>();
@@ -92,12 +92,12 @@ namespace Sitecore.ContentDelivery.Web
                 }
             }
 
-            if (parameters.TryGetValue("levels", out value))
+            if (parameters.TryGetValue("children", out value))
             {
-                int levels;
-                if (int.TryParse(value, out levels))
+                int children;
+                if (int.TryParse(value, out children))
                 {
-                    Levels = levels;
+                    Children = children;
                 }
             }
 

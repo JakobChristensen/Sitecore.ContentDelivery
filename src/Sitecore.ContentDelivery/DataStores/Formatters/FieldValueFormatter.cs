@@ -1,6 +1,8 @@
 ﻿// © 2015 Sitecore Corporation A/S. All rights reserved.
 
+using Sitecore.Data.Fields;
 using Sitecore.Resources;
+using Sitecore.Resources.Media;
 using Sitecore.Web;
 using Sitecore.Web.UI;
 
@@ -10,7 +12,7 @@ namespace Sitecore.ContentDelivery.DataStores.Formatters
     {
         public double Priority { get; } = 1000;
 
-        public bool TryFormat(FieldInfo fieldInfo, string value, out string formattedValue)
+        public bool TryFormat(Field field, FieldInfo fieldInfo, string value, out string formattedValue)
         {
             formattedValue = string.Empty;
 
@@ -30,6 +32,11 @@ namespace Sitecore.ContentDelivery.DataStores.Formatters
                     return true;
                 case "url":
                     formattedValue = WebUtil.GetFullUrl(value);
+                    return true;
+                case "img":
+                    var imageField = new ImageField(field);
+                    var url = MediaManager.GetMediaUrl(imageField.MediaItem);
+                    formattedValue = WebUtil.GetFullUrl(url);
                     return true;
             }
 

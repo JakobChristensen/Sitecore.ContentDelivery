@@ -10,20 +10,20 @@ namespace Sitecore.ContentDelivery.Pipelines.Loader
     {
         public void Process([NotNull] PipelineArgs args)
         {
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetBundle", "cd/bundle", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetBundle", "sitecore/get", new
             {
                 controller = "ContentDelivery",
                 action = "GetBundle"
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDataStore", "cd/{dataStoreName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDataStore", "sitecore/get/{dataStoreName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetDataStore",
                 dataStoreName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetChildren", "cd/{dataStoreName}/children/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetChildren", "sitecore/get/children/{dataStoreName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetChildren",
@@ -31,34 +31,34 @@ namespace Sitecore.ContentDelivery.Pipelines.Loader
                 itemName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItems", "cd/{dataStoreName}/items", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItems", "sitecore/get/items/{dataStoreName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItems",
                 dataStoreName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "cd/{dataStoreName}/items/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", "sitecore/get/template/{dataStoreName}/{*templateName}", new
             {
                 controller = "ContentDelivery",
-                action = "GetItem",
+                action = "GetTemplate",
                 dataStoreName = "",
-                itemName = ""
+                templateName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplates", "cd/{dataStoreName}/templates", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplates", "sitecore/get/templates/{dataStoreName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplates",
                 dataStoreName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", "cd/{dataStoreName}/templates/{*templateName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "sitecore/get/{dataStoreName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
-                action = "GetTemplate",
+                action = "GetItem",
                 dataStoreName = "",
-                templateName = ""
+                itemName = ""
             });
         }
     }

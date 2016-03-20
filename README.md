@@ -1,18 +1,18 @@
 Content Delivery Service for Sitecore CMS.
 
-Requests to the Content Delivery service are prefixed with "/cd".
+Requests to the Content Delivery service are prefixed with "/sitecore/get".
 
-Parameters can either be passed as query string parameters or as form post fields.
+Parameters can either be passed as query string parameters or as form post values.
 
 # Security
 Either pass username and password or pass an access token (not implemented yet).
                                     
 ``` 
-/cd/master?username=Admin&password=b
+/sitecore/get/master?username=Admin&password=b
 ```
 or
 ``` 
-/cd/master?token=test
+/sitecore/get/master?token=test
 ```
 
 # Data Stores
@@ -20,7 +20,7 @@ By default the Content Delivery service has 3 data stores: web, master and core.
 
 Get "master" data store
 ``` 
-/cd/master
+/sitecore/get/master
 ```
 
 Returns:
@@ -33,8 +33,8 @@ Returns:
   },
   "type": "items",
   "name": "master",
-  "smallIcon": "/sitecore/shell/themes/standard/Images/database_master.png",
-  "largeIcon": "/sitecore/shell/themes/standard/Images/database_master.png",
+  "icon16x16": "/sitecore/shell/themes/standard/Images/database_master.png",
+  "icon32x32": "/sitecore/shell/themes/standard/Images/database_master.png",
   "languages": [
     {
       "name": "en",
@@ -48,8 +48,8 @@ Returns:
     "displayName": "sitecore",
     "database": "master",
     "dataStore": "master",
-    "smallIcon": "/temp/IconCache/Applications/16x16/Document.png",
-    "largeIcon": "/temp/IconCache/Applications/32x32/Document.png",
+    "icon16x16": "/temp/IconCache/Applications/16x16/Document.png",
+    "icon32x32": "/temp/IconCache/Applications/32x32/Document.png",
     "path": "/sitecore",
     "templateId": "{C6576836-910C-4A3D-BA03-C277DBD3B827}",
     "templateName": "Root",
@@ -62,16 +62,16 @@ Returns:
 
 Get all items in the master data store:
 ``` 
-/cd/master/items
+/sitecore/get/items/master
 ```
 
 Get "Home" item:
 ``` 
-/cd/master/items/sitecore/content/Home
+/sitecore/get/master/sitecore/content/Home
 ``` 
 or
 ``` 
-/cd/master/items/{110D559F-DEA5-42EA-9C1C-8A5DF7E70EF9}
+/sitecore/get/master/{110D559F-DEA5-42EA-9C1C-8A5DF7E70EF9}
 ```
 
 Returns:
@@ -87,8 +87,8 @@ Returns:
   "displayName": "Home",
   "database": "master",
   "dataStore": "master",
-  "smallIcon": "/temp/IconCache/Network/16x16/home.png",
-  "largeIcon": "/temp/IconCache/Network/32x32/home.png",
+  "icon16x16": "/temp/IconCache/Network/16x16/home.png",
+  "icon32x32": "/temp/IconCache/Network/32x32/home.png",
   "path": "/sitecore/content/Home",
   "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
   "templateName": "Sample Item",
@@ -98,7 +98,7 @@ Returns:
 
 Get items in the master data store where Title is "Welcome":
 ``` 
-/cd/master/items?Title=Welcome
+/sitecore/get/items/master?Title=Welcome
 ```
 
 Returns:
@@ -119,8 +119,8 @@ Returns:
       "displayName": "Home",
       "database": "master",
       "dataStore": "master",
-      "smallIcon": "/temp/IconCache/Network/16x16/home.png",
-      "largeIcon": "/temp/IconCache/Network/32x32/home.png",
+      "icon16x16": "/temp/IconCache/Network/16x16/home.png",
+      "icon32x32": "/temp/IconCache/Network/32x32/home.png",
       "path": "/sitecore/content/Home",
       "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
       "templateName": "Sample Item",
@@ -132,42 +132,47 @@ Returns:
 
 Get items in the master data store where Title is not "Welcome":
 ``` 
-/cd/master/items?Title[not]=Welcome
+/sitecore/get/items/master?Title[not]=Welcome
 ```
 
 Get items in the master data store where Data is one of "Value A|Value B|Value C":
 ``` 
-/cd/master/items?Data[in]=Value A|Value B|Value C
+/sitecore/get/items/master?Data[in]=Value A|Value B|Value C
 ```
 
 Get items in the master data store where Data is not one of "Value A|Value B|Value C":
 ``` 
-/cd/master/items?Data[not in]=Value A|Value B|Value C
+/sitecore/get/items/master?Data[not in]=Value A|Value B|Value C
 ```
 
 Get items in the master data store where Data has a value (not blank):
 ``` 
-/cd/master/items?Data[has]=
+/sitecore/get/items/master?Data[has]=
 ```
 
 Full text search (includes all fields):
 ``` 
-/cd/master/items?query=Text to search for
+/sitecore/get/items/master?query=Text to search for
+```
+
+Get item:
+``` 
+/sitecore/get/master/sitecore/content/Home
 ```
 
 Get item with children in 2 levels:
 ``` 
-/cd/master/items/sitecore/content/Home?levels=2
+/sitecore/get/master/sitecore/content/Home?children=2
 ```
 
 Get first 10 items in the master data store where Title is "Welcome":
 ``` 
-/cd/master/items?Title=Welcome&take=10
+/sitecore/get/items/master?Title=Welcome&take=10
 ```
 
 Get 10 items skipping first 100 items in the master data store where Title is "Welcome":
 ``` 
-/cd/master/items?Title=Welcome&take=10&skip=100
+/sitecore/get/items/master?Title=Welcome&take=10&skip=100
 ```
 
 ## Operators
@@ -182,14 +187,14 @@ Get 10 items skipping first 100 items in the master data store where Title is "W
 
 * take - take first n items
 * skip - skip first n items
-* levels - including children in n levels
+* children - including children in n levels
 * query - full text search
 
 # Fields
 
 Get Title, Text and __Icon fields:
 ``` 
-/cd/master/items/sitecore/content/Home?fields=Title, Text, __Icon
+/sitecore/get/master/sitecore/content/Home?fields=Title, Text, __Icon
 ``` 
 
 Returns:
@@ -205,8 +210,8 @@ Returns:
   "displayName": "Home",
   "database": "master",
   "dataStore": "master",
-  "smallIcon": "/temp/IconCache/Network/16x16/home.png",
-  "largeIcon": "/temp/IconCache/Network/32x32/home.png",
+  "icon16x16": "/temp/IconCache/Network/16x16/home.png",
+  "icon32x32": "/temp/IconCache/Network/32x32/home.png",
   "path": "/sitecore/content/Home",
   "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
   "templateName": "Sample Item",
@@ -221,22 +226,22 @@ Returns:
 
 Get Title, Text and __Icon fields with __Icon formatted as an icon Url:
 ``` 
-/cd/master/items/sitecore/content/Home?fields=Title, Text, __Icon[icon48x48]
+/sitecore/get/master/sitecore/content/Home?fields=Title, Text, __Icon[icon48x48]
 ``` 
 
 Get all fields:
 ``` 
-/cd/master/items/sitecore/content/Home?fields=*
+/sitecore/get/master/sitecore/content/Home?fields=*
 ``` 
 
 Get all fields including system fields:
 ``` 
-/cd/master/items/sitecore/content/Home?fields=*&systemfields=true
+/sitecore/get/master/sitecore/content/Home?fields=*&systemfields=true
 ``` 
 
 Get all fields including field info:
 ``` 
-/cd/master/items/sitecore/content/Home?fields=Title&fieldinfo=true
+/sitecore/get/master/sitecore/content/Home?fields=Title&fieldinfo=true
 ``` 
 
 ```js
@@ -251,8 +256,8 @@ Get all fields including field info:
   "displayName": "Home",
   "database": "master",
   "dataStore": "master",
-  "smallIcon": "/temp/IconCache/Network/16x16/home.png",
-  "largeIcon": "/temp/IconCache/Network/32x32/home.png",
+  "icon16x16": "/temp/IconCache/Network/16x16/home.png",
+  "icon32x32": "/temp/IconCache/Network/32x32/home.png",
   "path": "/sitecore/content/Home",
   "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
   "templateName": "Sample Item",
@@ -275,29 +280,38 @@ Get all fields including field info:
 * icon32x32 - icon url with size 32x32
 * icon48x48 - icon url with size 48x48
 * url - Url including host name
+* img - image url
+
+## Special fields
+
+* id - item ID
+* name - item name
+* templateid - template ID
+* templatename - template name
+* path - item path
 
 # Children
 
 Get children of "Home" item:
 ``` 
-/cd/master/children/sitecore/content/Home
+/sitecore/get/children/master/sitecore/content/Home
 ```
 
 Get children of "Home" item including 2 levels:
 ``` 
-/cd/master/children/sitecore/content/Home?level=2
+/sitecore/get/children/master/sitecore/content/Home?children=2
 ```
 
 # Templates
 
 Get all templates:
 ``` 
-/cd/master/templates
+/sitecore/get/templates/master
 ```
 
 Get "Sample Item" template:
 ``` 
-/cd/master/templates/sitecore/templates/Sample/Sample Item
+/sitecore/get/template/master/sitecore/templates/Sample/Sample Item
 ```
 
 Returns:
@@ -313,8 +327,8 @@ Returns:
   "displayName": "Sample Item",
   "database": "master",
   "dataStore": "master",
-  "smallIcon": "/temp/IconCache/Applications/16x16/document.png",
-  "largeIcon": "/temp/IconCache/Applications/32x32/document.png",
+  "icon16x16": "/temp/IconCache/Applications/16x16/document.png",
+  "icon32x32": "/temp/IconCache/Applications/32x32/document.png",
   "path": "/sitecore/templates/Sample/Sample Item",
   "templateId": "{AB86861A-6030-46C5-B394-E8F99E8B87DB}",
   "templateName": "Template",
@@ -346,7 +360,7 @@ Returns:
 
 Get "Sample Item" template including system fields:
 ``` 
-/cd/master/templates/sitecore/templates/Sample/Sample Item?systemfields=true
+/sitecore/get/template/master/sitecore/templates/Sample/Sample Item?systemfields=true
 ```
 
 
@@ -357,9 +371,15 @@ Pass each Url as a form post value.
 
 ``` js
 var data = {
-    "request1": "/cd/master/children/sitecore/content/Home?level=2",
-    "request2": "/cd/master/items/sitecore/content/Home?fields=*&fieldinfo=true"
+    "request1": "/sitecore/get/children/master/sitecore/content/Home?children=2",
+    "request2": "/sitecore/get/master/sitecore/content/Home?fields=*&fieldinfo=true"
 };
+
+$.post("/sitecore/get", data, function(result) {
+        console.log(result);
+    }
+)
+
 ```
 
 # CORS
