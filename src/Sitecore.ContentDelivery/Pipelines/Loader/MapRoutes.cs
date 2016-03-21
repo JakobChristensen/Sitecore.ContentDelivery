@@ -53,6 +53,13 @@ namespace Sitecore.ContentDelivery.Pipelines.Loader
                 dataStoreName = ""
             });
 
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DumpDataStore", "sitecore/get/dump/{dataStoreName}", new
+            {
+                controller = "ContentDelivery",
+                action = "DumpDataStore",
+                dataStoreName = ""
+            });
+
             RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "sitecore/get/{dataStoreName}/{*itemName}", new
             {
                 controller = "ContentDelivery",

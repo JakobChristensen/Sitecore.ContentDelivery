@@ -22,6 +22,7 @@ namespace Sitecore.ContentDelivery.Web
             "take",
             "fields",
             "systemfields",
+            "emptyfields",
             "username",
             "password",
             "domain",
@@ -52,14 +53,16 @@ namespace Sitecore.ContentDelivery.Web
             Parse(parameters);
         }
 
+        public int Children { get; private set; }
+
         [NotNull]
         public List<FieldInfo> Fields { get; } = new List<FieldInfo>();
+
+        public bool IncludeEmptyFields { get; private set; }
 
         public bool IncludeFieldInfo { get; private set; }
 
         public bool IncludeSystemFields { get; private set; }
-
-        public int Children { get; private set; }
 
         [NotNull]
         public Dictionary<string, string> Parameters { get; } = new Dictionary<string, string>();
@@ -149,6 +152,7 @@ namespace Sitecore.ContentDelivery.Web
             }
 
             IncludeSystemFields = parameters.Keys.Any(k => string.Equals(k, "systemfields", StringComparison.OrdinalIgnoreCase));
+            IncludeEmptyFields = parameters.Keys.Any(k => string.Equals(k, "emptyfields", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

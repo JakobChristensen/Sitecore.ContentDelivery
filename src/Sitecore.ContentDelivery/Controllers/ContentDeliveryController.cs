@@ -1,6 +1,7 @@
 // © 2015 Sitecore Corporation A/S. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Web;
@@ -182,6 +183,30 @@ namespace Sitecore.ContentDelivery.Controllers
             var requestParameters = new RequestParameters(Request);
 
             return dataStore.GetTemplate(requestParameters, templateName);
+        }
+
+        public virtual ActionResult DumpDataStore(string dataStoreName)
+        {
+            var authenticationResult = AuthenticateUser();
+            if (authenticationResult != null)
+            {
+                return authenticationResult;
+            }
+
+            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
+            if (dataStore == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+            }
+
+            var dictionary = new Dictionary<string, string>();
+            dictionary["children"] = "999";
+            dictionary["fields"] = "*";
+            dictionary["systemfields"] = "true";
+
+            var requestParameters = new RequestParameters(dictionary);
+
+            return dataStore.GetItem(requestParameters, "{11111111-1111-1111-1111-111111111111}");
         }
 
         public virtual ActionResult GetTemplates(string dataStoreName)

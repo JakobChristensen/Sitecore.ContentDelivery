@@ -8,32 +8,28 @@ using System.Linq;
 using System.Net;
 using System.Web.Mvc;
 using Newtonsoft.Json;
-using Sitecore.Configuration;
 using Sitecore.ContentDelivery.Extensions;
 using Sitecore.ContentDelivery.Web;
-using Sitecore.ContentSearch;
-using Sitecore.ContentSearch.SearchTypes;
-using Sitecore.Data;
-using Sitecore.Data.Items;
 using Sitecore.Extensions.StringExtensions;
-using Sitecore.Resources;
-using Sitecore.Resources.Media;
-using Sitecore.Web;
-using Sitecore.Web.UI;
 
-namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
+namespace Sitecore.ContentDelivery.DataStores.FileDataStores
 {
-    public class ItemDataStore : DataStoreBase
+    public abstract class FileDataStore : IDataStore
     {
-        public ItemDataStore(string databaseName) : base(databaseName)
+        protected FileDataStore(string fileName)
         {
-            Database = Factory.GetDatabase(databaseName);
+            FileName = fileName;
+            DataStoreName = Path.GetFileNameWithoutExtension(fileName) ?? string.Empty;
         }
 
-        [NotNull]
-        public Database Database { get; }
+        public string DataStoreName { get; }
 
-        public override ActionResult GetChildren(RequestParameters requestParameters, string itemName)
+        public string FileName { get; set; }
+
+        [NotNull]
+        public ICollection<FileDataStoreItem> Items { get; } = new List<FileDataStoreItem>();
+
+        public virtual ActionResult GetChildren(RequestParameters requestParameters, string itemName)
         {
             var items = GetItemsByName(itemName);
             if (!items.Any())
@@ -52,7 +48,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item not found");
             }
 
-            var children = item.Children as IEnumerable<Item>;
+            var children = item.Children;
 
             foreach (var pair in requestParameters.Parameters)
             {
@@ -132,9 +128,9 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetDataStore(RequestParameters requestParameters)
+        public virtual ActionResult GetDataStore(RequestParameters requestParameters)
         {
-            var rootItem = Database.GetRootItem();
+            var rootItem = Items.FirstOrDefault(i => i.Parent == null);
             if (rootItem == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Root item not found");
@@ -145,16 +141,16 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             output.WritePropertyString("type", "items");
             output.WritePropertyString("name", DataStoreName);
-            output.WritePropertyString("icon16x16", Images.GetThemedImageSource(Database.Icon, ImageDimension.id16x16));
-            output.WritePropertyString("icon32x32", Images.GetThemedImageSource(Database.Icon, ImageDimension.id32x32));
+            output.WritePropertyString("icon16x16", string.Empty);
+            output.WritePropertyString("icon32x32", string.Empty);
 
             output.WriteStartArray("languages");
-            foreach (var language in Database.GetLanguages().OrderBy(l => l.Name))
+            foreach (var language in Items.First(i => i.Path == "/sitecore/system/Languages").Children.OrderBy(l => l.Name))
             {
                 output.WriteStartObject();
                 output.WritePropertyString("name", language.Name);
-                output.WritePropertyString("displayName", language.GetDisplayName());
-                output.WritePropertyString("cultureName", language.CultureInfo.Name);
+                output.WritePropertyString("displayName", language.Name);
+                output.WritePropertyString("cultureName", language["Iso"]);
                 output.WriteEndObject();
             }
 
@@ -168,7 +164,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetItem(RequestParameters requestParameters, string itemName)
+        public virtual ActionResult GetItem(RequestParameters requestParameters, string itemName)
         {
             var items = GetItemsByName(itemName).ToList();
             if (!items.Any())
@@ -197,31 +193,22 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetItems(RequestParameters requestParameters)
+        public virtual ActionResult GetItems(RequestParameters requestParameters)
         {
-            List<ID> result;
-            IEnumerable<Item> items;
-            var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
-            using (var context = index.CreateSearchContext())
+            var result = Filter(Items.AsQueryable(), requestParameters).Where(i => i.Name != "$name" && i.Name != "__Standard Values").ToList();
+            var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDataStoreItem>;
+
+            if (requestParameters.Skip > 0)
             {
-                var queryable = Filter(context.GetQueryable<SearchResultItem>(), requestParameters);
-
-                result = queryable.Where(i => i.Name != "$name" && i.Name != "__Standard Values").Select(item => item.ItemId).ToList().Distinct().ToList();
-
-                items = result.Select(Database.GetItem).Where(i => i != null).OrderBy(t => t.Name).ThenBy(t => t.Paths.Path);
-
-                if (requestParameters.Skip > 0)
-                {
-                    items = items.Skip(requestParameters.Skip);
-                }
-
-                if (requestParameters.Take > 0)
-                {
-                    items = items.Take(requestParameters.Take);
-                }
-
-                items = items.ToList();
+                items = items.Skip(requestParameters.Skip);
             }
+
+            if (requestParameters.Take > 0)
+            {
+                items = items.Take(requestParameters.Take);
+            }
+
+            items = items.ToList();
 
             var output = new JsonContentResultWriter(new StringWriter());
             WriteMetaData(output);
@@ -246,7 +233,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetTemplate(RequestParameters requestParameters, string templateName)
+        public virtual ActionResult GetTemplate(RequestParameters requestParameters, string templateName)
         {
             var templates = GetTemplatesByName(templateName).ToList();
             if (!templates.Any())
@@ -265,8 +252,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Template not found");
             }
 
-            var template = new TemplateItem(templateItem);
-            if (template.InnerItem.TemplateID != TemplateIDs.Template)
+            if (templateItem.TemplateId != TemplateIDs.Template.Guid)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item found, but it is not a template");
             }
@@ -274,13 +260,12 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             var output = new JsonContentResultWriter(new StringWriter());
             WriteMetaData(output);
 
-            WriteItemHeader(output, template);
+            WriteItemHeader(output, templateItem);
 
             output.WriteStartArray("fields");
 
-            foreach (var field in template.Fields.OrderBy(f => f.Section.Sortorder).ThenBy(f => f.Section.Name).ThenBy(f => f.Sortorder).ThenBy(f => f.Name))
+            foreach (var field in templateItem.Children.SelectMany(section => section.Children))
             {
-                var isOwnField = field.InnerItem.Parent.Parent == template.InnerItem;
                 var isSystemField = field.Name.StartsWith("__");
 
                 if (isSystemField && !requestParameters.IncludeSystemFields)
@@ -289,14 +274,14 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 }
 
                 output.WriteStartObject();
-                output.WritePropertyString("id", field.ID.ToString());
+                output.WritePropertyString("id", field.Id.ToString("B").ToUpperInvariant());
                 output.WritePropertyString("name", field.Name);
                 output.WritePropertyString("displayName", field.DisplayName);
-                output.WritePropertyString("type", field.Type);
-                output.WritePropertyString("source", field.Source);
-                output.WritePropertyString("sharing", field.IsShared ? "shared" : field.IsUnversioned ? "unversioned" : "versioned");
-                output.WritePropertyString("section", field.Section.Name);
-                output.WritePropertyString("kind", isOwnField ? "own" : isSystemField ? "system" : "inherited");
+                output.WritePropertyString("type", field["Type"]);
+                output.WritePropertyString("source", field["Source"]);
+                output.WritePropertyString("sharing", field["Shared"] == "1" ? "shared" : field["Unversioned"] == "1" ? "unversioned" : "versioned");
+                output.WritePropertyString("section", field.Parent?.Name ?? string.Empty);
+                output.WritePropertyString("kind", "own");
                 output.WriteEndObject();
             }
 
@@ -305,31 +290,22 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetTemplates(RequestParameters requestParameters)
+        public virtual ActionResult GetTemplates(RequestParameters requestParameters)
         {
-            List<ID> result;
-            IEnumerable<Item> templates;
-            var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
-            using (var context = index.CreateSearchContext())
+            var result = Filter(Items.AsQueryable(), requestParameters).Where(t => t.TemplateId == TemplateIDs.Template.Guid).Distinct().ToList();
+            var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDataStoreItem>;
+
+            if (requestParameters.Skip > 0)
             {
-                var queryable = Filter(context.GetQueryable<SearchResultItem>(), requestParameters);
-
-                result = queryable.Where(t => t.TemplateId == TemplateIDs.Template).Select(item => item.ItemId).ToList().Distinct().ToList();
-
-                templates = result.Select(Database.GetItem).Where(i => i != null).OrderBy(t => t.Name).ThenBy(t => t.Paths.Path);
-
-                if (requestParameters.Skip > 0)
-                {
-                    templates = templates.Skip(requestParameters.Skip);
-                }
-
-                if (requestParameters.Take > 0)
-                {
-                    templates = templates.Take(requestParameters.Take);
-                }
-
-                templates = templates.ToList();
+                items = items.Skip(requestParameters.Skip);
             }
+
+            if (requestParameters.Take > 0)
+            {
+                items = items.Take(requestParameters.Take);
+            }
+
+            items = items.ToList();
 
             var output = new JsonContentResultWriter(new StringWriter());
             WriteMetaData(output);
@@ -340,10 +316,10 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             output.WriteStartArray("templates");
 
-            foreach (var template in templates)
+            foreach (var item in items)
             {
                 output.WriteStartObject();
-                WriteItemHeader(output, template);
+                WriteItemHeader(output, item);
                 output.WriteEndObject();
             }
 
@@ -352,15 +328,11 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        protected virtual IQueryable<SearchResultItem> Filter(IQueryable<SearchResultItem> queryable, RequestParameters requestParameters)
+        protected virtual IQueryable<FileDataStoreItem> Filter(IQueryable<FileDataStoreItem> queryable, RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Path))
             {
-                var pathItem = Database.GetItem(requestParameters.Path);
-                if (pathItem != null)
-                {
-                    queryable = queryable.Where(i => i.Paths.Contains(pathItem.ID));
-                }
+                queryable = queryable.Where(i => i.Path.StartsWith(requestParameters.Path));
             }
 
             foreach (var pair in requestParameters.Parameters)
@@ -368,54 +340,10 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 var fieldName = pair.Key;
                 var value = pair.Value;
 
-                if (fieldName == "query")
-                {
-                    queryable = queryable.Where(item => item.Content.Contains(value));
-                    continue;
-                }
-
                 if (!fieldName.EndsWith("]"))
                 {
-                    switch (fieldName.ToLowerInvariant())
-                    {
-                        case "id":
-                            Guid itemGuid;
-                            if (!Guid.TryParse(value, out itemGuid))
-                            {
-                                throw new InvalidOperationException("Not a valid guid");
-                            }
-
-                            var itemId = new ID(itemGuid);
-                            queryable = queryable.Where(item => item.TemplateId == itemId);
-                            continue;
-
-                        case "name":
-                            queryable = queryable.Where(item => item.Name == value);
-                            continue;
-
-                        case "path":
-                            queryable = queryable.Where(item => item.Path == value);
-                            continue;
-
-                        case "templateid":
-                            Guid templateGuid;
-                            if (!Guid.TryParse(value, out templateGuid))
-                            {
-                                throw new InvalidOperationException("Not a valid guid");
-                            }
-
-                            var templateId = new ID(templateGuid);
-                            queryable = queryable.Where(item => item.TemplateId == templateId);
-                            continue;
-
-                        case "templatename":
-                            queryable = queryable.Where(item => item.TemplateName == value);
-                            continue;
-
-                        default:
-                            queryable = queryable.Where(item => item[fieldName] == value);
-                            continue;
-                    }
+                    queryable = queryable.Where(i => i[fieldName] == value);
+                    continue;
                 }
 
                 var n = fieldName.LastIndexOf('[');
@@ -430,21 +358,21 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 switch (op)
                 {
                     case "not":
-                        queryable = queryable.Where(item => item[fieldName] != value);
+                        queryable = queryable.Where(i => i[fieldName] != value);
                         break;
 
                     case "in":
                         var l1 = value.Split('|');
-                        queryable = queryable.Where(item => l1.Contains(item[fieldName]));
+                        queryable = queryable.Where(i => l1.Contains(i[fieldName]));
                         break;
 
                     case "not in":
                         var l2 = value.Split('|');
-                        queryable = queryable.Where(item => !l2.Contains(item[fieldName]));
+                        queryable = queryable.Where(i => !l2.Contains(i[fieldName]));
                         break;
 
                     case "has":
-                        queryable = queryable.Where(item => !string.IsNullOrEmpty(item[fieldName]));
+                        queryable = queryable.Where(t => !string.IsNullOrEmpty(t[fieldName]));
                         break;
                 }
             }
@@ -453,11 +381,18 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
         }
 
         [NotNull]
-        protected virtual IEnumerable<Item> GetItemsByName(string itemName)
+        protected virtual IEnumerable<FileDataStoreItem> GetItemsByName(string itemName)
         {
-            if (ID.IsID(itemName))
+            if (itemName.StartsWith("{"))
             {
-                yield return Database.GetItem(itemName);
+                Guid guid;
+                if (!Guid.TryParse(itemName, out guid))
+                {
+                    throw new InvalidOperationException("ID is not valid");
+                }
+
+                yield return Items.FirstOrDefault(i => i.Id == guid);
+                yield break;
             }
 
             if (itemName.IndexOf('/') >= 0)
@@ -467,21 +402,28 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                     itemName = "/" + itemName;
                 }
 
-                yield return Database.GetItem(itemName);
+                yield return Items.FirstOrDefault(i => i.Path == itemName);
+                yield break;
             }
 
-            foreach (var item in Database.GetItemsByName(itemName))
+            foreach (var item in Items.Where(i => i.Name == itemName))
             {
                 yield return item;
             }
         }
 
         [NotNull]
-        protected virtual IEnumerable<Item> GetTemplatesByName(string templateName)
+        protected virtual IEnumerable<FileDataStoreItem> GetTemplatesByName(string templateName)
         {
-            if (ID.IsID(templateName))
+            if (templateName.StartsWith("{"))
             {
-                yield return Database.GetItem(templateName);
+                Guid guid;
+                if (!Guid.TryParse(templateName, out guid))
+                {
+                    throw new InvalidOperationException("ID is not valid");
+                }
+
+                yield return Items.FirstOrDefault(i => i.Id == guid);
                 yield break;
             }
 
@@ -492,17 +434,17 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                     templateName = "/" + templateName;
                 }
 
-                yield return Database.GetItem(templateName);
+                yield return Items.FirstOrDefault(i => i.Path == templateName);
                 yield break;
             }
 
-            foreach (var item in Database.GetItemsByName(templateName, TemplateIDs.Template))
+            foreach (var item in Items.Where(i => i.Name == templateName && i.TemplateId == TemplateIDs.Template.Guid))
             {
                 yield return item;
             }
         }
 
-        protected virtual void WriteItemChildren(JsonTextWriter output, RequestParameters request, Item item, int children)
+        protected virtual void WriteItemChildren(JsonTextWriter output, RequestParameters request, FileDataStoreItem item, int children)
         {
             if (children == 0 || !item.Children.Any())
             {
@@ -511,7 +453,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             output.WriteStartArray("children");
 
-            foreach (Item child in item.Children)
+            foreach (var child in item.Children)
             {
                 output.WriteStartObject();
                 WriteItemHeader(output, child);
@@ -523,7 +465,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             output.WriteEndArray();
         }
 
-        protected virtual void WriteItemFields(JsonTextWriter output, RequestParameters request, Item item)
+        protected virtual void WriteItemFields(JsonTextWriter output, RequestParameters request, FileDataStoreItem item)
         {
             if (!request.Fields.Any())
             {
@@ -534,8 +476,6 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             var includeSystemFields = request.IncludeSystemFields;
             var includeFieldInfo = request.IncludeFieldInfo;
 
-            item.Fields.ReadAll();
-
             if (includeFieldInfo)
             {
                 output.WriteStartArray("fields");
@@ -545,7 +485,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 output.WriteStartObject("fields");
             }
 
-            foreach (var field in item.Fields.OrderBy(f => f.SectionSortorder).ThenBy(f => f.Section).ThenBy(f => f.Sortorder).ThenBy(f => f.Name))
+            foreach (var field in item.Fields)
             {
                 if (includeAllFields)
                 {
@@ -561,23 +501,6 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
                 var value = field.Value;
 
-                if (!includeAllFields)
-                {
-                    var fieldDescriptor = request.Fields.First(f => string.Equals(f.FieldName, field.Name, StringComparison.OrdinalIgnoreCase));
-
-                    foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
-                    {
-                        string formattedValue;
-                        if (!formatter.TryFormat(field, fieldDescriptor, value, out formattedValue))
-                        {
-                            continue;
-                        }
-
-                        value = formattedValue;
-                        break;
-                    }
-                }
-
                 if (!request.IncludeEmptyFields && string.IsNullOrEmpty(value))
                 {
                     continue;
@@ -586,7 +509,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 if (includeFieldInfo)
                 {
                     output.WriteStartObject();
-                    output.WritePropertyString("id", field.ID.ToString());
+                    output.WritePropertyString("id", field.Id.ToString("B").ToUpperInvariant());
                     output.WritePropertyString("name", field.Name);
                     output.WritePropertyString("displayName", field.DisplayName);
                     output.WritePropertyString("value", value);
@@ -608,22 +531,22 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             }
         }
 
-        protected virtual void WriteItemHeader(JsonTextWriter output, Item item)
+        protected virtual void WriteItemHeader(JsonTextWriter output, FileDataStoreItem item)
         {
-            output.WritePropertyString("id", item.ID.ToString());
+            output.WritePropertyString("id", item.Id.ToString("B").ToUpperInvariant());
             output.WritePropertyString("name", item.Name);
             output.WritePropertyString("displayName", item.DisplayName);
-            output.WritePropertyString("database", item.Database.Name);
-            output.WritePropertyString("icon16x16", Images.GetThemedImageSource(item.Appearance.Icon, ImageDimension.id16x16));
-            output.WritePropertyString("icon32x32", Images.GetThemedImageSource(item.Appearance.Icon, ImageDimension.id32x32));
-            output.WritePropertyString("path", item.Paths.Path);
-            output.WritePropertyString("templateId", item.TemplateID.ToString());
-            output.WritePropertyString("templateName", item.TemplateName);
-            output.WritePropertyString("childCount", item.Children.Count);
+            output.WritePropertyString("database", DataStoreName);
+            output.WritePropertyString("icon16x16", item.Icon16X16);
+            output.WritePropertyString("icon32x32", item.Icon32X32);
+            output.WritePropertyString("path", item.Path);
+            output.WritePropertyString("templateId", item.TemplateId.ToString("B").ToUpperInvariant());
+            output.WritePropertyString("templateName", item.Template);
+            output.WritePropertyString("childCount", item.ChildCount);
 
-            if (item.Paths.IsMediaItem)
+            if (item.Path.StartsWith("/sitecore/media library/"))
             {
-                output.WritePropertyString("mediaurl", WebUtil.GetFullUrl(MediaManager.GetMediaUrl(new MediaItem(item))));
+                output.WritePropertyString("mediaurl", item.MediaUrl);
             }
         }
 
