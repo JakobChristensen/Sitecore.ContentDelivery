@@ -396,4 +396,24 @@ To enable CORS, drop this in the web.config:
   </system.webServer>
 ``` 
 
+# Sitecore.WebServer
+The Sitecore WebServer wraps the Sitecore Content Delivery service in a small website that can be run with IIS Express.
 
+The web server does not include Sitecore, so Sitecore databases cannot be accessed. Instead the Content Delivery service 
+loads Json files from the App_Data/DataStores/ directory. 
+
+This means that you can use the web service without actually running Sitecore!
+
+To start the website using IIS Express, use:
+```
+"c:\program files (x86)\iis express\iisexpress" /path:<absolute path to the directory where the website is located>
+```
+
+See also the `run.cmd` file.
+
+To dump a database to a Json file for use with the Sitecore WebServer, make a request to:
+``` 
+/sitecore/get/dump/master
+```
+
+Save the output to a .json file in /App_Data/DataStores.
