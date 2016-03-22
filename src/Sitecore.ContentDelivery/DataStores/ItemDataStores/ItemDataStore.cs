@@ -15,7 +15,6 @@ using Sitecore.ContentSearch;
 using Sitecore.ContentSearch.SearchTypes;
 using Sitecore.Data;
 using Sitecore.Data.Items;
-using Sitecore.Extensions.StringExtensions;
 using Sitecore.Resources;
 using Sitecore.Resources.Media;
 using Sitecore.Web;

@@ -1,6 +1,10 @@
+// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+
 using System;
+using System.Linq;
 using System.Web.Mvc;
 using System.Web.Security;
+using Sitecore.Security.Authentication;
 using Sitecore.SecurityModel.License;
 using Sitecore.Web;
 
@@ -9,6 +13,16 @@ namespace Sitecore.ContentDelivery.Controllers
     public abstract class ContentDeliveryControllerBase : Controller
     {
         protected virtual ActionResult AuthenticateUser()
+        {
+            if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName.IndexOf("Sitecore.Kernel", StringComparison.Ordinal) >= 0))
+            {
+                return null;
+            }
+
+            return AuthenticateUsingSitecore();
+        }
+
+        protected ActionResult AuthenticateUsingSitecore()
         {
             var userName = WebUtil.GetQueryString("username") ?? string.Empty;
             var password = WebUtil.GetQueryString("password") ?? string.Empty;
@@ -50,7 +64,7 @@ namespace Sitecore.ContentDelivery.Controllers
                 return new HttpUnauthorizedResult("Unknown username or password");
             }
 
-            Security.Authentication.AuthenticationManager.Login(userName, password, true);
+            AuthenticationManager.Login(userName, password, true);
 
             return null;
         }

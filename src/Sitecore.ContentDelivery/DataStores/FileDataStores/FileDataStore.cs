@@ -10,7 +10,6 @@ using System.Web.Mvc;
 using Newtonsoft.Json;
 using Sitecore.ContentDelivery.Extensions;
 using Sitecore.ContentDelivery.Web;
-using Sitecore.Extensions.StringExtensions;
 
 namespace Sitecore.ContentDelivery.DataStores.FileDataStores
 {
@@ -554,8 +553,8 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
         {
             output.WriteStartObject("metadata");
             output.WritePropertyString("version", "1");
-            output.WritePropertyString("user", Context.GetUserName());
-            output.WritePropertyString("language", Context.Language.Name);
+            output.WritePropertyString("user", "sitecore\\admin");
+            output.WritePropertyString("language", "en");
             output.WriteEndObject();
         }
     }

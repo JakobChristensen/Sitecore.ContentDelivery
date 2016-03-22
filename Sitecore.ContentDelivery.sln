@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{AC8CB7FD-4
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sitecore.WebServer", "src\Sitecore.WebServer\Sitecore.WebServer.csproj", "{D0D42F27-91F7-46D0-8421-82BF35F3551D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{9735A01C-D464-48CE-9AC5-B86DABD420FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9735A01C-D464-48CE-9AC5-B86DABD420FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9735A01C-D464-48CE-9AC5-B86DABD420FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D0D42F27-91F7-46D0-8421-82BF35F3551D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D0D42F27-91F7-46D0-8421-82BF35F3551D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D0D42F27-91F7-46D0-8421-82BF35F3551D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D0D42F27-91F7-46D0-8421-82BF35F3551D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

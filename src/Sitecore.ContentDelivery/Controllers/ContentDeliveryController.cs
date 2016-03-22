@@ -8,7 +8,6 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
 using Newtonsoft.Json.Linq;
-using Sitecore.ContentDelivery.DataStores;
 using Sitecore.ContentDelivery.Web;
 using Sitecore.Extensions.StringExtensions;
 

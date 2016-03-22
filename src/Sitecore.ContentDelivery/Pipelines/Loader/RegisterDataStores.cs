@@ -1,4 +1,4 @@
-﻿// © 2015 Sitecore Corporation A/S. All rights reserved.
+﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
 
 using System.IO;
 using Sitecore.ContentDelivery.DataStores.FileDataStores;
@@ -6,7 +6,6 @@ using Sitecore.ContentDelivery.DataStores.Formatters;
 using Sitecore.ContentDelivery.DataStores.ItemDataStores;
 using Sitecore.IO;
 using Sitecore.Pipelines;
-using Sitecore.Web;
 
 namespace Sitecore.ContentDelivery.Pipelines.Loader
 {
