@@ -4,12 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
 using Newtonsoft.Json.Linq;
+using Sitecore.ContentDelivery.Extensions;
 using Sitecore.ContentDelivery.Web;
-using Sitecore.Extensions.StringExtensions;
 
 namespace Sitecore.ContentDelivery.Controllers
 {
@@ -87,6 +88,66 @@ namespace Sitecore.ContentDelivery.Controllers
             }
 
             return output.ToContentResult();
+        }
+
+        [NotNull]
+        public virtual ActionResult Call([NotNull] string typeName)
+        {
+            var actionResult = AuthenticateUser();
+            if (actionResult != null)
+            {
+                return actionResult;
+            }
+
+            Type type;
+
+            typeName = typeName.Replace("/", ".");
+
+            var n = typeName.LastIndexOf(',');
+            if (n >= 0)
+            {
+                var assemblyName = typeName.Mid(n + 1).Trim();
+                typeName = typeName.Left(n).Trim();
+
+                if (!assemblyName.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    assemblyName += ".dll";
+                }
+
+                var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if (string.IsNullOrEmpty(directoryName))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Assembly not found");
+                }
+
+                assemblyName = Path.Combine(directoryName, assemblyName);
+
+                var assembly = Assembly.LoadFile(assemblyName);
+                if (assembly == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Assembly not found");
+                }
+
+                type = assembly.GetType(typeName);
+            }
+            else
+            {
+                type = Type.GetType(typeName);
+            }
+
+            if (type == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Type not found in assembly");
+            }
+
+            var instance = Activator.CreateInstance(type) as IContentDeliveryCall;
+            if (instance == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Type not found in assembly");
+            }
+
+            var result = instance.Execute(this);
+            return result;
         }
 
         public virtual ActionResult GetChildren(string dataStoreName, string itemName)

@@ -83,12 +83,19 @@ namespace Sitecore.ContentDelivery
                 dataStoreName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "sitecore/get/{dataStoreName}/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "sitecore/get/item/{dataStoreName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItem",
                 dataStoreName = "",
                 itemName = ""
+            });
+
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.Call", "sitecore/call/{*className}", new
+            {
+                controller = "ContentDelivery",
+                action = "Call",
+                className = ""
             });
         }
     }

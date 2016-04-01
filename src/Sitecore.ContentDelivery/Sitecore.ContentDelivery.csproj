@@ -130,6 +130,7 @@
     <Compile Include="DataStores\FileDataStores\FileDataStoreItem.cs" />
     <Compile Include="Extensions\JObjectExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Web\IContentDeliveryCall.cs" />
     <Compile Include="Web\JsonContentResultWriter.cs" />
     <Compile Include="Web\RequestParameters.cs" />
     <Compile Include="DataStores\DataStoreBase.cs" />

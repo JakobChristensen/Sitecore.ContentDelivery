@@ -15,6 +15,7 @@ using Sitecore.ContentSearch;
 using Sitecore.ContentSearch.SearchTypes;
 using Sitecore.Data;
 using Sitecore.Data.Items;
+using Sitecore.Globalization;
 using Sitecore.Resources;
 using Sitecore.Resources.Media;
 using Sitecore.Web;
@@ -34,6 +35,8 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
         public override ActionResult GetChildren(RequestParameters requestParameters, string itemName)
         {
+            SetContext(requestParameters);
+
             var items = GetItemsByName(itemName);
             if (!items.Any())
             {
@@ -133,6 +136,8 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
         public override ActionResult GetDataStore(RequestParameters requestParameters)
         {
+            SetContext(requestParameters);
+
             var rootItem = Database.GetRootItem();
             if (rootItem == null)
             {
@@ -169,6 +174,8 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
         public override ActionResult GetItem(RequestParameters requestParameters, string itemName)
         {
+            SetContext(requestParameters);
+
             var items = GetItemsByName(itemName).ToList();
             if (!items.Any())
             {
@@ -186,6 +193,15 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item not found");
             }
 
+            if (requestParameters.Version != 0)
+            {
+                item = item.Database.GetItem(item.ID, item.Language, new Data.Version(requestParameters.Version));
+                if (item == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item version not found");
+                }
+            }
+
             var output = new JsonContentResultWriter(new StringWriter());
             WriteMetaData(output);
 
@@ -198,6 +214,8 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
         public override ActionResult GetItems(RequestParameters requestParameters)
         {
+            SetContext(requestParameters);
+
             List<ID> result;
             IEnumerable<Item> items;
             var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
@@ -247,6 +265,8 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
         public override ActionResult GetTemplate(RequestParameters requestParameters, string templateName)
         {
+            SetContext(requestParameters);
+
             var templates = GetTemplatesByName(templateName).ToList();
             if (!templates.Any())
             {
@@ -306,6 +326,8 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
         public override ActionResult GetTemplates(RequestParameters requestParameters)
         {
+            SetContext(requestParameters);
+
             List<ID> result;
             IEnumerable<Item> templates;
             var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
@@ -498,6 +520,14 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             foreach (var item in Database.GetItemsByName(templateName, TemplateIDs.Template))
             {
                 yield return item;
+            }
+        }
+
+        protected virtual void SetContext([NotNull] RequestParameters requestParameters)
+        {
+            if (!string.IsNullOrEmpty(requestParameters.Language))
+            {
+                Context.Language = Language.Parse(requestParameters.Language);
             }
         }
 

@@ -28,7 +28,9 @@ namespace Sitecore.ContentDelivery.Web
             "domain",
             "token",
             "path",
-            "children"
+            "children",
+            "lang",
+            "ver"
         };
 
         public RequestParameters(HttpRequestBase request)
@@ -65,6 +67,9 @@ namespace Sitecore.ContentDelivery.Web
         public bool IncludeSystemFields { get; private set; }
 
         [NotNull]
+        public string Language { get; private set; } = string.Empty;
+
+        [NotNull]
         public Dictionary<string, string> Parameters { get; } = new Dictionary<string, string>();
 
         [NotNull]
@@ -73,6 +78,8 @@ namespace Sitecore.ContentDelivery.Web
         public int Skip { get; private set; }
 
         public int Take { get; private set; }
+
+        public int Version { get; private set; }
 
         private void Parse([NotNull] Dictionary<string, string> parameters)
         {
@@ -116,6 +123,20 @@ namespace Sitecore.ContentDelivery.Web
             if (parameters.TryGetValue("path", out value))
             {
                 Path = value;
+            }
+
+            if (parameters.TryGetValue("lang", out value))
+            {
+                Language = value;
+            }
+
+            if (parameters.TryGetValue("ver", out value))
+            {
+                int version;
+                if (int.TryParse(value, out version))
+                {
+                    Version = version;
+                }
             }
 
             foreach (var pair in parameters)

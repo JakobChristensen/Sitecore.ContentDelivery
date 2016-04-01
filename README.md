@@ -67,11 +67,11 @@ Get all items in the master data store:
 
 Get "Home" item:
 ``` 
-/sitecore/get/master/sitecore/content/Home
+/sitecore/get/item/master/sitecore/content/Home
 ``` 
 or
 ``` 
-/sitecore/get/master/{110D559F-DEA5-42EA-9C1C-8A5DF7E70EF9}
+/sitecore/get/item/master/{110D559F-DEA5-42EA-9C1C-8A5DF7E70EF9}
 ```
 
 Returns:
@@ -157,12 +157,12 @@ Full text search (includes all fields):
 
 Get item:
 ``` 
-/sitecore/get/master/sitecore/content/Home
+/sitecore/get/item/master/sitecore/content/Home
 ```
 
 Get item with children in 2 levels:
 ``` 
-/sitecore/get/master/sitecore/content/Home?children=2
+/sitecore/get/item/master/sitecore/content/Home?children=2
 ```
 
 Get first 10 items in the master data store where Title is "Welcome":
@@ -183,18 +183,21 @@ Get 10 items skipping first 100 items in the master data store where Title is "W
 * [not in]= - where field not in list of value
 * [has]= - where field has a value
 
-## filters
+## Filters
 
+* lang - language
+* ver - version (only for get item)
 * take - take first n items
 * skip - skip first n items
 * children - including children in n levels
 * query - full text search
 
+
 # Fields
 
 Get Title, Text and __Icon fields:
 ``` 
-/sitecore/get/master/sitecore/content/Home?fields=Title, Text, __Icon
+/sitecore/get/item/master/sitecore/content/Home?fields=Title, Text, __Icon
 ``` 
 
 Returns:
@@ -226,22 +229,22 @@ Returns:
 
 Get Title, Text and __Icon fields with __Icon formatted as an icon Url:
 ``` 
-/sitecore/get/master/sitecore/content/Home?fields=Title, Text, __Icon[icon48x48]
+/sitecore/get/item/master/sitecore/content/Home?fields=Title, Text, __Icon[icon48x48]
 ``` 
 
 Get all fields:
 ``` 
-/sitecore/get/master/sitecore/content/Home?fields=*
+/sitecore/get/item/master/sitecore/content/Home?fields=*
 ``` 
 
 Get all fields including system fields:
 ``` 
-/sitecore/get/master/sitecore/content/Home?fields=*&systemfields=true
+/sitecore/get/item/master/sitecore/content/Home?fields=*&systemfields=true
 ``` 
 
 Get all fields including field info:
 ``` 
-/sitecore/get/master/sitecore/content/Home?fields=Title&fieldinfo=true
+/sitecore/get/item/master/sitecore/content/Home?fields=Title&fieldinfo=true
 ``` 
 
 ```js
@@ -363,7 +366,6 @@ Get "Sample Item" template including system fields:
 /sitecore/get/template/master/sitecore/templates/Sample/Sample Item?systemfields=true
 ```
 
-
 # Bundling
 Bundling is only supported when using form posts. 
 
@@ -372,29 +374,49 @@ Pass each Url as a form post value.
 ``` js
 var data = {
     "request1": "/sitecore/get/children/master/sitecore/content/Home?children=2",
-    "request2": "/sitecore/get/master/sitecore/content/Home?fields=*&fieldinfo=true"
+    "request2": "/sitecore/get/item/master/sitecore/content/Home?fields=*&fieldinfo=true"
 };
 
 $.post("/sitecore/get", data, function(result) {
         console.log(result);
     }
 )
-
 ```
 
-# CORS
-To enable CORS, drop this in the web.config:
+# Extensibility
+The Content Delivery service is extendable. 
 
-```xml
-<configuration>
-  <system.webServer>
-    <httpProtocol>
-      <customHeaders>
-        <add name="Access-Control-Allow-Origin" value="http://www.domain.com" />
-      </customHeaders>
-    </httpProtocol>
-  </system.webServer>
+Implement the `IContentDeliveryCall` interface in class.
+
+Interface:
+```cs
+public interface IContentDeliveryCall
+{
+    ActionResult Execute(RequestParameters requestParameters);
+}
 ``` 
+
+Class:
+```cs
+namespace MyContent.MyService 
+{
+    public class MyCall: IContentDeliveryCall
+    {
+        public ActionResult Execute(Controller controller)  
+        {
+            return new ContentResult()
+            {
+                Content = "My Content"
+            };
+        }
+    }
+}
+``` 
+
+To call this class:
+``` 
+/sitecore/call/MyContent/MyService/MyCall
+```
 
 # Sitecore.WebServer
 The Sitecore WebServer wraps the Sitecore Content Delivery service in a small website that can be run with IIS Express.
@@ -417,3 +439,18 @@ To dump a database to a Json file for use with the Sitecore WebServer, make a re
 ```
 
 Save the output to a .json file in /App_Data/DataStores.
+
+# CORS
+To enable CORS, drop this in the web.config:
+
+```xml
+<configuration>
+  <system.webServer>
+    <httpProtocol>
+      <customHeaders>
+        <add name="Access-Control-Allow-Origin" value="http://www.domain.com" />
+      </customHeaders>
+    </httpProtocol>
+  </system.webServer>
+``` 
+
