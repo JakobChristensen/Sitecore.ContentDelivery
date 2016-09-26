@@ -45,7 +45,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             if (items.Count() > 1)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.Ambiguous, "Ambigeous item name");
+                return new HttpStatusCodeResult(HttpStatusCode.Ambiguous, "Ambiguous item name");
             }
 
             var item = items.First();
@@ -184,7 +184,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             if (items.Count > 1)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.Ambiguous, "Ambigeous item name");
+                return new HttpStatusCodeResult(HttpStatusCode.Ambiguous, "Ambiguous item name");
             }
 
             var item = items.First();
@@ -275,7 +275,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
             if (templates.Count > 1)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.Ambiguous, "Ambigeous template name");
+                return new HttpStatusCodeResult(HttpStatusCode.Ambiguous, "Ambiguous template name");
             }
 
             var templateItem = templates.First();

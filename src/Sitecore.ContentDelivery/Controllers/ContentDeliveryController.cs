@@ -122,7 +122,7 @@ namespace Sitecore.ContentDelivery.Controllers
 
                 assemblyName = Path.Combine(directoryName, assemblyName);
 
-                var assembly = Assembly.LoadFile(assemblyName);
+                var assembly = Assembly.LoadFrom(assemblyName);
                 if (assembly == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Assembly not found");
