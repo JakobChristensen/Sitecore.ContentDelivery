@@ -2,11 +2,11 @@
 
 using System;
 
-namespace Sitecore.ContentDelivery.DataStores.FileDataStores
+namespace Sitecore.ContentDelivery.Databases.FileDatabases
 {
-    public class FileDataStoreField
+    public class FileDatabaseField
     {
-        public FileDataStoreField([NotNull] string name, [NotNull] string value)
+        public FileDatabaseField([NotNull] string name, [NotNull] string value)
         {
             Id = Guid.NewGuid();
             Name = name;
@@ -14,7 +14,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             Value = value;
         }
 
-        public FileDataStoreField(Guid id, [NotNull] string name, [NotNull] string displayName, [NotNull] string value)
+        public FileDatabaseField(Guid id, [NotNull] string name, [NotNull] string displayName, [NotNull] string value)
         {
             Id = id;
             Name = name;

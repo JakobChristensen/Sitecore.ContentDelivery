@@ -21,11 +21,11 @@ using Sitecore.Resources.Media;
 using Sitecore.Web;
 using Sitecore.Web.UI;
 
-namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
+namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 {
-    public class ItemDataStore : DataStoreBase
+    public class ItemDatabase : DatabaseBase
     {
-        public ItemDataStore(string databaseName) : base(databaseName)
+        public ItemDatabase(string databaseName) : base(databaseName)
         {
             Database = Factory.GetDatabase(databaseName);
         }
@@ -134,7 +134,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetDataStore(RequestParameters requestParameters)
+        public override ActionResult GetDatabase([NotNull] RequestParameters requestParameters)
         {
             SetContext(requestParameters);
 
@@ -148,7 +148,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             WriteMetaData(output);
 
             output.WritePropertyString("type", "items");
-            output.WritePropertyString("name", DataStoreName);
+            output.WritePropertyString("name", DatabaseName);
             output.WritePropertyString("icon16x16", Images.GetThemedImageSource(Database.Icon, ImageDimension.id16x16));
             output.WritePropertyString("icon32x32", Images.GetThemedImageSource(Database.Icon, ImageDimension.id32x32));
 
@@ -172,7 +172,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetItem(RequestParameters requestParameters, string itemName)
+        public override ActionResult GetItem([NotNull] RequestParameters requestParameters, string itemName)
         {
             SetContext(requestParameters);
 
@@ -212,7 +212,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetItems(RequestParameters requestParameters)
+        public override ActionResult GetItems([NotNull] RequestParameters requestParameters)
         {
             SetContext(requestParameters);
 
@@ -263,7 +263,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetTemplate(RequestParameters requestParameters, string templateName)
+        public override ActionResult GetTemplate([NotNull] RequestParameters requestParameters, string templateName)
         {
             SetContext(requestParameters);
 
@@ -324,7 +324,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        public override ActionResult GetTemplates(RequestParameters requestParameters)
+        public override ActionResult GetTemplates([NotNull] RequestParameters requestParameters)
         {
             SetContext(requestParameters);
 
@@ -373,7 +373,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             return output.ToContentResult();
         }
 
-        protected virtual IQueryable<SearchResultItem> Filter(IQueryable<SearchResultItem> queryable, RequestParameters requestParameters)
+        protected virtual IQueryable<SearchResultItem> Filter(IQueryable<SearchResultItem> queryable, [NotNull] RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Path))
             {
@@ -400,8 +400,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                     switch (fieldName.ToLowerInvariant())
                     {
                         case "id":
-                            Guid itemGuid;
-                            if (!Guid.TryParse(value, out itemGuid))
+                            if (!Guid.TryParse(value, out var itemGuid))
                             {
                                 throw new InvalidOperationException("Not a valid guid");
                             }
@@ -419,8 +418,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
                             continue;
 
                         case "templateid":
-                            Guid templateGuid;
-                            if (!Guid.TryParse(value, out templateGuid))
+                            if (!Guid.TryParse(value, out var templateGuid))
                             {
                                 throw new InvalidOperationException("Not a valid guid");
                             }
@@ -552,7 +550,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             output.WriteEndArray();
         }
 
-        protected virtual void WriteItemFields(JsonTextWriter output, RequestParameters request, Item item)
+        protected virtual void WriteItemFields(JsonTextWriter output, [NotNull] RequestParameters request, Item item)
         {
             if (!request.Fields.Any())
             {
@@ -596,8 +594,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
 
                     foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
                     {
-                        string formattedValue;
-                        if (!formatter.TryFormat(field, fieldDescriptor, value, out formattedValue))
+                        if (!formatter.TryFormat(field, fieldDescriptor, value, out var formattedValue))
                         {
                             continue;
                         }
@@ -637,7 +634,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             }
         }
 
-        protected virtual void WriteItemHeader(JsonTextWriter output, Item item)
+        protected virtual void WriteItemHeader([NotNull] JsonTextWriter output, [NotNull] Item item)
         {
             output.WritePropertyString("id", item.ID.ToString());
             output.WritePropertyString("name", item.Name);
@@ -656,7 +653,7 @@ namespace Sitecore.ContentDelivery.DataStores.ItemDataStores
             }
         }
 
-        protected virtual void WriteMetaData(JsonTextWriter output)
+        protected virtual void WriteMetaData([NotNull] JsonTextWriter output)
         {
             output.WriteStartObject("metadata");
             output.WritePropertyString("version", "1");

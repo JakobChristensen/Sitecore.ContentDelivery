@@ -2,7 +2,7 @@
 
 using Sitecore.Data.Fields;
 
-namespace Sitecore.ContentDelivery.DataStores.Formatters
+namespace Sitecore.ContentDelivery.Databases.Formatters
 {
     public interface IFieldValueFormatter
     {

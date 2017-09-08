@@ -2,29 +2,29 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Sitecore.ContentDelivery.DataStores;
-using Sitecore.ContentDelivery.DataStores.Formatters;
+using Sitecore.ContentDelivery.Databases;
+using Sitecore.ContentDelivery.Databases.Formatters;
 
 namespace Sitecore.ContentDelivery
 {
     public static class ContentDeliveryManager
     {
-        private static readonly ICollection<IDataStore> DataStores = new List<IDataStore>();
+        private static readonly ICollection<IDatabase> Databases = new List<IDatabase>();
 
         [NotNull]
         public static ICollection<IFieldValueFormatter> FieldValueFormatters { get; } = new List<IFieldValueFormatter>();
 
         [CanBeNull]
-        public static IDataStore GetDataStore([NotNull] string dataStoreName)
+        public static IDatabase GetDatabase([NotNull] string databaseName)
         {
-            return DataStores.FirstOrDefault(d => d.DataStoreName == dataStoreName);
+            return Databases.FirstOrDefault(d => d.DatabaseName == databaseName);
         }
 
         [NotNull]
-        public static IDataStore MountDataStore([NotNull] IDataStore dataStore)
+        public static IDatabase MountDatabase([NotNull] IDatabase database)
         {
-            DataStores.Add(dataStore);
-            return dataStore;
+            Databases.Add(database);
+            return database;
         }
 
         public static void RegisterFieldValueFormatter([NotNull] FieldValueFormatter fieldValueFormatter)
@@ -38,10 +38,10 @@ namespace Sitecore.ContentDelivery
         }
 
         [NotNull]
-        public static IDataStore UnmountDataStore([NotNull] IDataStore dataStore)
+        public static IDatabase UnmountDatabase([NotNull] IDatabase database)
         {
-            DataStores.Remove(dataStore);
-            return dataStore;
+            Databases.Remove(database);
+            return database;
         }
     }
 }

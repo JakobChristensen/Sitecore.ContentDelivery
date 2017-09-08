@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
@@ -16,6 +15,7 @@ namespace Sitecore.ContentDelivery.Controllers
 {
     public class ContentDeliveryController : ContentDeliveryControllerBase
     {
+        [NotNull]
         public virtual ActionResult GetBundle()
         {
             var authenticationResult = AuthenticateUser();
@@ -34,7 +34,7 @@ namespace Sitecore.ContentDelivery.Controllers
                     continue;
                 }
 
-                if (key == "username" || key == "password" || key == "token" || key == "domain")
+                if (key == "username" || key == "password" || key == "domain")
                 {
                     continue;
                 }
@@ -91,66 +91,7 @@ namespace Sitecore.ContentDelivery.Controllers
         }
 
         [NotNull]
-        public virtual ActionResult Call([NotNull] string typeName)
-        {
-            var actionResult = AuthenticateUser();
-            if (actionResult != null)
-            {
-                return actionResult;
-            }
-
-            Type type;
-
-            typeName = typeName.Replace("/", ".");
-
-            var n = typeName.LastIndexOf(',');
-            if (n >= 0)
-            {
-                var assemblyName = typeName.Mid(n + 1).Trim();
-                typeName = typeName.Left(n).Trim();
-
-                if (!assemblyName.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    assemblyName += ".dll";
-                }
-
-                var directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                if (string.IsNullOrEmpty(directoryName))
-                {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Assembly not found");
-                }
-
-                assemblyName = Path.Combine(directoryName, assemblyName);
-
-                var assembly = Assembly.LoadFrom(assemblyName);
-                if (assembly == null)
-                {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Assembly not found");
-                }
-
-                type = assembly.GetType(typeName);
-            }
-            else
-            {
-                type = Type.GetType(typeName);
-            }
-
-            if (type == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Type not found in assembly");
-            }
-
-            var instance = Activator.CreateInstance(type) as IContentDeliveryCall;
-            if (instance == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Type not found in assembly");
-            }
-
-            var result = instance.Execute(this);
-            return result;
-        }
-
-        public virtual ActionResult GetChildren(string dataStoreName, string itemName)
+        public virtual ActionResult GetChildren(string databaseName, string itemName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -158,18 +99,19 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
-            if (dataStore == null)
+            var database = ContentDeliveryManager.GetDatabase(databaseName);
+            if (database == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
             }
 
             var requestParameters = new RequestParameters(Request);
 
-            return dataStore.GetChildren(requestParameters, itemName);
+            return database.GetChildren(requestParameters, itemName);
         }
 
-        public virtual ActionResult GetDataStore(string dataStoreName)
+        [NotNull]
+        public virtual ActionResult GetDatabase(string databaseName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -177,18 +119,19 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
-            if (dataStore == null)
+            var database = ContentDeliveryManager.GetDatabase(databaseName);
+            if (database == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
             }
 
             var requestParameters = new RequestParameters(Request);
 
-            return dataStore.GetDataStore(requestParameters);
+            return database.GetDatabase(requestParameters);
         }
 
-        public virtual ActionResult GetItem(string dataStoreName, string itemName)
+        [NotNull]
+        public virtual ActionResult GetItem(string databaseName, string itemName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -196,18 +139,19 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
-            if (dataStore == null)
+            var database = ContentDeliveryManager.GetDatabase(databaseName);
+            if (database == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
             }
 
             var requestParameters = new RequestParameters(Request);
 
-            return dataStore.GetItem(requestParameters, itemName);
+            return database.GetItem(requestParameters, itemName);
         }
 
-        public virtual ActionResult GetItems(string dataStoreName)
+        [NotNull]
+        public virtual ActionResult GetItems(string databaseName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -215,18 +159,19 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
-            if (dataStore == null)
+            var database = ContentDeliveryManager.GetDatabase(databaseName);
+            if (database == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
             }
 
             var requestParameters = new RequestParameters(Request);
 
-            return dataStore.GetItems(requestParameters);
+            return database.GetItems(requestParameters);
         }
 
-        public virtual ActionResult GetTemplate(string dataStoreName, string templateName)
+        [NotNull]
+        public virtual ActionResult GetTemplate(string databaseName, string templateName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -234,18 +179,19 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
-            if (dataStore == null)
+            var database = ContentDeliveryManager.GetDatabase(databaseName);
+            if (database == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
             }
 
             var requestParameters = new RequestParameters(Request);
 
-            return dataStore.GetTemplate(requestParameters, templateName);
+            return database.GetTemplate(requestParameters, templateName);
         }
 
-        public virtual ActionResult DumpDataStore(string dataStoreName)
+        [NotNull]
+        public virtual ActionResult DumpDatabase(string databaseName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -253,10 +199,10 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
-            if (dataStore == null)
+            var database = ContentDeliveryManager.GetDatabase(databaseName);
+            if (database == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
             }
 
             var dictionary = new Dictionary<string, string>();
@@ -266,10 +212,11 @@ namespace Sitecore.ContentDelivery.Controllers
 
             var requestParameters = new RequestParameters(dictionary);
 
-            return dataStore.GetItem(requestParameters, "{11111111-1111-1111-1111-111111111111}");
+            return database.GetItem(requestParameters, "{11111111-1111-1111-1111-111111111111}");
         }
 
-        public virtual ActionResult GetTemplates(string dataStoreName)
+        [NotNull]
+        public virtual ActionResult GetTemplates(string databaseName)
         {
             var authenticationResult = AuthenticateUser();
             if (authenticationResult != null)
@@ -277,15 +224,15 @@ namespace Sitecore.ContentDelivery.Controllers
                 return authenticationResult;
             }
 
-            var dataStore = ContentDeliveryManager.GetDataStore(dataStoreName);
-            if (dataStore == null)
+            var database = ContentDeliveryManager.GetDatabase(databaseName);
+            if (database == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "DataStore not found");
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
             }
 
             var requestParameters = new RequestParameters(Request);
 
-            return dataStore.GetTemplates(requestParameters);
+            return database.GetTemplates(requestParameters);
         }
     }
 }

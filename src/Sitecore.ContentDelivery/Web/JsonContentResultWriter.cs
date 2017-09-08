@@ -21,6 +21,7 @@ namespace Sitecore.ContentDelivery.Web
             WriteStartObject();
         }
 
+        [NotNull]
         public ContentResult ToContentResult()
         {
             WriteEndObject();

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using Sitecore.ContentDelivery.DataStores;
+using Sitecore.ContentDelivery.Databases;
 using Sitecore.ContentDelivery.Extensions;
 
 namespace Sitecore.ContentDelivery.Web
@@ -33,7 +33,7 @@ namespace Sitecore.ContentDelivery.Web
             "ver"
         };
 
-        public RequestParameters(HttpRequestBase request)
+        public RequestParameters([NotNull] HttpRequestBase request)
         {
             var parameters = new Dictionary<string, string>();
 
@@ -73,7 +73,7 @@ namespace Sitecore.ContentDelivery.Web
         public Dictionary<string, string> Parameters { get; } = new Dictionary<string, string>();
 
         [NotNull]
-        public string Path { get; private set; }
+        public string Path { get; private set; } = string.Empty;
 
         public int Skip { get; private set; }
 
@@ -83,11 +83,9 @@ namespace Sitecore.ContentDelivery.Web
 
         private void Parse([NotNull] Dictionary<string, string> parameters)
         {
-            string value;
-            if (parameters.TryGetValue("skip", out value))
+            if (parameters.TryGetValue("skip", out var value))
             {
-                int skip;
-                if (int.TryParse(value, out skip))
+                if (int.TryParse(value, out var skip))
                 {
                     Skip = skip;
                 }
@@ -95,8 +93,7 @@ namespace Sitecore.ContentDelivery.Web
 
             if (parameters.TryGetValue("take", out value))
             {
-                int take;
-                if (int.TryParse(value, out take))
+                if (int.TryParse(value, out var take))
                 {
                     Take = take;
                 }
@@ -104,8 +101,7 @@ namespace Sitecore.ContentDelivery.Web
 
             if (parameters.TryGetValue("children", out value))
             {
-                int children;
-                if (int.TryParse(value, out children))
+                if (int.TryParse(value, out var children))
                 {
                     Children = children;
                 }
@@ -113,8 +109,7 @@ namespace Sitecore.ContentDelivery.Web
 
             if (parameters.TryGetValue("fieldinfo", out value))
             {
-                bool fieldInfo;
-                if (bool.TryParse(value, out fieldInfo))
+                if (bool.TryParse(value, out var fieldInfo))
                 {
                     IncludeFieldInfo = fieldInfo;
                 }
@@ -132,8 +127,7 @@ namespace Sitecore.ContentDelivery.Web
 
             if (parameters.TryGetValue("ver", out value))
             {
-                int version;
-                if (int.TryParse(value, out version))
+                if (int.TryParse(value, out var version))
                 {
                     Version = version;
                 }

@@ -5,14 +5,10 @@ Requests to the Content Delivery service are prefixed with "/sitecore/get".
 Parameters can either be passed as query string parameters or as form post values.
 
 # Security
-Either pass username and password or pass an access token (not implemented yet).
+Pass username and password.
                                     
 ``` 
 /sitecore/get/master?username=Admin&password=b
-```
-or
-``` 
-/sitecore/get/master?token=test
 ```
 
 # Data Stores
@@ -381,41 +377,6 @@ $.post("/sitecore/get", data, function(result) {
         console.log(result);
     }
 )
-```
-
-# Extensibility
-The Content Delivery service is extendable. 
-
-Implement the `IContentDeliveryCall` interface in class.
-
-Interface:
-```cs
-public interface IContentDeliveryCall
-{
-    ActionResult Execute(RequestParameters requestParameters);
-}
-``` 
-
-Class:
-```cs
-namespace MyContent.MyService 
-{
-    public class MyCall: IContentDeliveryCall
-    {
-        public ActionResult Execute(Controller controller)  
-        {
-            return new ContentResult()
-            {
-                Content = "My Content"
-            };
-        }
-    }
-}
-``` 
-
-To call this class:
-``` 
-/sitecore/call/MyContent/MyService/MyCall
 ```
 
 # Sitecore.WebServer

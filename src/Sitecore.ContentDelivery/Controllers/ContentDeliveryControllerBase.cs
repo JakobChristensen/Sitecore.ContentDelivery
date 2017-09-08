@@ -1,4 +1,4 @@
-// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+// © 2015-2017 by Jakob Christensen. All rights reserved.
 
 using System;
 using System.Linq;
@@ -12,6 +12,7 @@ namespace Sitecore.ContentDelivery.Controllers
 {
     public abstract class ContentDeliveryControllerBase : Controller
     {
+        [CanBeNull]
         protected virtual ActionResult AuthenticateUser()
         {
             if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName.IndexOf("Sitecore.Kernel", StringComparison.Ordinal) >= 0))
@@ -22,25 +23,15 @@ namespace Sitecore.ContentDelivery.Controllers
             return AuthenticateUsingSitecore();
         }
 
+        [CanBeNull]
         protected ActionResult AuthenticateUsingSitecore()
         {
             var userName = WebUtil.GetQueryString("username") ?? string.Empty;
             var password = WebUtil.GetQueryString("password") ?? string.Empty;
-            var authenticationToken = WebUtil.GetQueryString("token") ?? string.Empty;
 
-            if (string.IsNullOrEmpty(authenticationToken) && string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password))
+            if (string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password))
             {
                 return null;
-            }
-
-            if (!string.IsNullOrEmpty(authenticationToken) && string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password))
-            {
-                // todo: support for authentication tokens
-                if (authenticationToken == "1" || authenticationToken == "test")
-                {
-                    userName = "sitecore\\admin";
-                    password = "b";
-                }
             }
 
             if (Context.IsLoggedIn)

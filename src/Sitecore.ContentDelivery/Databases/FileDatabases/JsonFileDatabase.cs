@@ -6,11 +6,11 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using Sitecore.ContentDelivery.Extensions;
 
-namespace Sitecore.ContentDelivery.DataStores.FileDataStores
+namespace Sitecore.ContentDelivery.Databases.FileDatabases
 {
-    public class JsonFileDataStore : FileDataStore
+    public class JsonFileDatabase : FileDatabase
     {
-        public JsonFileDataStore(string fileName) : base(fileName)
+        public JsonFileDatabase(string fileName) : base(fileName)
         {
             var content = File.ReadAllText(FileName);
 
@@ -19,7 +19,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             ReadItem(root, null);
         }
 
-        protected void ReadItem(JObject jobject, [CanBeNull] FileDataStoreItem parent)
+        protected void ReadItem(JObject jobject, [CanBeNull] FileDatabaseItem parent)
         {
             var itemName = jobject.GetPropertyValue("name");
             var itemDisplayName = jobject.GetPropertyValue("displayName");
@@ -50,7 +50,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
                 throw new InvalidOperationException("childCount is not a valid integer");
             }
 
-            var item = new FileDataStoreItem(this, parent, itemId, itemName, itemDisplayName, icon16X16, icon32X32, template, templateId, path, childCount, mediaUrl);
+            var item = new FileDatabaseItem(this, parent, itemId, itemName, itemDisplayName, icon16X16, icon32X32, template, templateId, path, childCount, mediaUrl);
 
             var fields = (JObject)jobject.Property("fields").Value;
             foreach (var property in fields.Properties())
@@ -58,7 +58,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
                 var fieldName = property.Name;
                 var value = property.Value.ToString();
 
-                var field = new FileDataStoreField(fieldName, value);
+                var field = new FileDatabaseField(fieldName, value);
 
                 item.Fields.Add(field);
             }

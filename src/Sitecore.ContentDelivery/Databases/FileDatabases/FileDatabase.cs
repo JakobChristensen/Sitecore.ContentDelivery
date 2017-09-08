@@ -11,22 +11,22 @@ using Newtonsoft.Json;
 using Sitecore.ContentDelivery.Extensions;
 using Sitecore.ContentDelivery.Web;
 
-namespace Sitecore.ContentDelivery.DataStores.FileDataStores
+namespace Sitecore.ContentDelivery.Databases.FileDatabases
 {
-    public abstract class FileDataStore : IDataStore
+    public abstract class FileDatabase : IDatabase
     {
-        protected FileDataStore(string fileName)
+        protected FileDatabase(string fileName)
         {
             FileName = fileName;
-            DataStoreName = Path.GetFileNameWithoutExtension(fileName) ?? string.Empty;
+            DatabaseName = Path.GetFileNameWithoutExtension(fileName) ?? string.Empty;
         }
 
-        public string DataStoreName { get; }
+        public string DatabaseName { get; }
 
         public string FileName { get; set; }
 
         [NotNull]
-        public ICollection<FileDataStoreItem> Items { get; } = new List<FileDataStoreItem>();
+        public ICollection<FileDatabaseItem> Items { get; } = new List<FileDatabaseItem>();
 
         public virtual ActionResult GetChildren(RequestParameters requestParameters, string itemName)
         {
@@ -127,7 +127,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetDataStore(RequestParameters requestParameters)
+        public virtual ActionResult GetDatabase(RequestParameters requestParameters)
         {
             var rootItem = Items.FirstOrDefault(i => i.Parent == null);
             if (rootItem == null)
@@ -139,7 +139,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             WriteMetaData(output);
 
             output.WritePropertyString("type", "items");
-            output.WritePropertyString("name", DataStoreName);
+            output.WritePropertyString("name", DatabaseName);
             output.WritePropertyString("icon16x16", string.Empty);
             output.WritePropertyString("icon32x32", string.Empty);
 
@@ -195,7 +195,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
         public virtual ActionResult GetItems(RequestParameters requestParameters)
         {
             var result = Filter(Items.AsQueryable(), requestParameters).Where(i => i.Name != "$name" && i.Name != "__Standard Values").ToList();
-            var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDataStoreItem>;
+            var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDatabaseItem>;
 
             if (requestParameters.Skip > 0)
             {
@@ -292,7 +292,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
         public virtual ActionResult GetTemplates(RequestParameters requestParameters)
         {
             var result = Filter(Items.AsQueryable(), requestParameters).Where(t => t.TemplateId == TemplateIDs.Template.Guid).Distinct().ToList();
-            var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDataStoreItem>;
+            var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDatabaseItem>;
 
             if (requestParameters.Skip > 0)
             {
@@ -327,7 +327,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             return output.ToContentResult();
         }
 
-        protected virtual IQueryable<FileDataStoreItem> Filter(IQueryable<FileDataStoreItem> queryable, RequestParameters requestParameters)
+        protected virtual IQueryable<FileDatabaseItem> Filter(IQueryable<FileDatabaseItem> queryable, RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Path))
             {
@@ -380,7 +380,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
         }
 
         [NotNull]
-        protected virtual IEnumerable<FileDataStoreItem> GetItemsByName(string itemName)
+        protected virtual IEnumerable<FileDatabaseItem> GetItemsByName(string itemName)
         {
             if (itemName.StartsWith("{"))
             {
@@ -412,7 +412,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
         }
 
         [NotNull]
-        protected virtual IEnumerable<FileDataStoreItem> GetTemplatesByName(string templateName)
+        protected virtual IEnumerable<FileDatabaseItem> GetTemplatesByName(string templateName)
         {
             if (templateName.StartsWith("{"))
             {
@@ -443,7 +443,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             }
         }
 
-        protected virtual void WriteItemChildren(JsonTextWriter output, RequestParameters request, FileDataStoreItem item, int children)
+        protected virtual void WriteItemChildren(JsonTextWriter output, RequestParameters request, FileDatabaseItem item, int children)
         {
             if (children == 0 || !item.Children.Any())
             {
@@ -464,7 +464,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             output.WriteEndArray();
         }
 
-        protected virtual void WriteItemFields(JsonTextWriter output, RequestParameters request, FileDataStoreItem item)
+        protected virtual void WriteItemFields(JsonTextWriter output, RequestParameters request, FileDatabaseItem item)
         {
             if (!request.Fields.Any())
             {
@@ -530,12 +530,12 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
             }
         }
 
-        protected virtual void WriteItemHeader(JsonTextWriter output, FileDataStoreItem item)
+        protected virtual void WriteItemHeader(JsonTextWriter output, FileDatabaseItem item)
         {
             output.WritePropertyString("id", item.Id.ToString("B").ToUpperInvariant());
             output.WritePropertyString("name", item.Name);
             output.WritePropertyString("displayName", item.DisplayName);
-            output.WritePropertyString("database", DataStoreName);
+            output.WritePropertyString("database", DatabaseName);
             output.WritePropertyString("icon16x16", item.Icon16X16);
             output.WritePropertyString("icon32x32", item.Icon32X32);
             output.WritePropertyString("path", item.Path);

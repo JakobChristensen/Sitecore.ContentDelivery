@@ -17,11 +17,6 @@
     <AssemblyName>Sitecore.ContentDelivery</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
-    <UseIISExpress>true</UseIISExpress>
-    <IISExpressSSLPort />
-    <IISExpressAnonymousAuthentication />
-    <IISExpressWindowsAuthentication />
-    <IISExpressUseClassicPipelineMode />
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -121,30 +116,30 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants.cs" />
     <Compile Include="ContentDeliveryConfig.cs" />
     <Compile Include="Controllers\ContentDeliveryController.cs" />
     <Compile Include="Controllers\ContentDeliveryControllerBase.cs" />
-    <Compile Include="DataStores\FieldInfo.cs" />
-    <Compile Include="DataStores\FileDataStores\FileDataStore.cs" />
-    <Compile Include="DataStores\FileDataStores\JsonFileDataStore.cs" />
-    <Compile Include="DataStores\Formatters\FieldValueFormatter.cs" />
-    <Compile Include="DataStores\Formatters\IFieldValueFormatter.cs" />
-    <Compile Include="DataStores\FileDataStores\FileDataStoreField.cs" />
-    <Compile Include="DataStores\FileDataStores\FileDataStoreItem.cs" />
+    <Compile Include="Databases\FieldInfo.cs" />
+    <Compile Include="Databases\FileDatabases\FileDatabase.cs" />
+    <Compile Include="Databases\FileDatabases\JsonFileDatabase.cs" />
+    <Compile Include="Databases\Formatters\FieldValueFormatter.cs" />
+    <Compile Include="Databases\Formatters\IFieldValueFormatter.cs" />
+    <Compile Include="Databases\FileDatabases\FileDatabaseField.cs" />
+    <Compile Include="Databases\FileDatabases\FileDatabaseItem.cs" />
     <Compile Include="Extensions\JObjectExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Web\IContentDeliveryCall.cs" />
     <Compile Include="Web\JsonContentResultWriter.cs" />
     <Compile Include="Web\RequestParameters.cs" />
-    <Compile Include="DataStores\DataStoreBase.cs" />
+    <Compile Include="Databases\DatabaseBase.cs" />
     <Compile Include="ContentDeliveryManager.cs" />
-    <Compile Include="DataStores\IDataStore.cs" />
-    <Compile Include="DataStores\ItemDataStores\ItemDataStore.cs" />
+    <Compile Include="Databases\IDatabase.cs" />
+    <Compile Include="Databases\ItemDatabases\ItemDatabase.cs" />
     <Compile Include="Extensions\DatabaseExtensions.cs" />
     <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\JsonTextWriterExtensions.cs" />
     <Compile Include="Pipelines\Loader\MapRoutes.cs" />
-    <Compile Include="Pipelines\Loader\RegisterDataStores.cs" />
+    <Compile Include="Pipelines\Loader\RegisterDatabases.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -153,7 +148,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App_Config\Include\Sitecore.ContentDelivery\Sitecore.ContentDelivery.config" />
+    <Content Include="App_Config\Include\Sitecore.ContentDelivery\Sitecore.ContentDelivery.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="web.config" />

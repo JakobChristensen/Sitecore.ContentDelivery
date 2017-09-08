@@ -3,18 +3,18 @@
 using System.Web.Mvc;
 using Sitecore.ContentDelivery.Web;
 
-namespace Sitecore.ContentDelivery.DataStores
+namespace Sitecore.ContentDelivery.Databases
 {
-    public interface IDataStore
+    public interface IDatabase
     {
         [NotNull]
-        string DataStoreName { get; }
+        string DatabaseName { get; }
 
         [NotNull]
         ActionResult GetChildren([NotNull] RequestParameters requestParameters, [NotNull] string itemName);
 
         [NotNull]
-        ActionResult GetDataStore(RequestParameters requestParameters);
+        ActionResult GetDatabase(RequestParameters requestParameters);
 
         [NotNull]
         ActionResult GetItem(RequestParameters requestParameters, [NotNull] string itemName);

@@ -4,15 +4,15 @@ using System.IO;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
-using Sitecore.ContentDelivery.DataStores.FileDataStores;
+using Sitecore.ContentDelivery.Databases.FileDatabases;
 
 namespace Sitecore.ContentDelivery
 {
     public static class ContentDeliveryConfig
     {
-        public static void MountDataStores()
+        public static void MountDatabases()
         {
-            var directory = HttpContext.Current.Server.MapPath("/App_Data/DataStores");
+            var directory = HttpContext.Current.Server.MapPath(Constants.AppDataDatabasesDirectory);
             if (!Directory.Exists(directory))
             {
                 return;
@@ -25,7 +25,7 @@ namespace Sitecore.ContentDelivery
                 switch (extension)
                 {
                     case ".json":
-                        ContentDeliveryManager.MountDataStore(new JsonFileDataStore(fileName));
+                        ContentDeliveryManager.MountDatabase(new JsonFileDatabase(fileName));
                         break;
                 }
             }
@@ -39,63 +39,56 @@ namespace Sitecore.ContentDelivery
                 action = "GetBundle"
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDataStore", "sitecore/get/{dataStoreName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDatabase", "sitecore/get/{databaseName}", new
             {
                 controller = "ContentDelivery",
-                action = "GetDataStore",
-                dataStoreName = ""
+                action = "GetDatabase",
+                databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetChildren", "sitecore/get/children/{dataStoreName}/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetChildren", "sitecore/get/children/{databaseName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetChildren",
-                dataStoreName = "",
+                databaseName = "",
                 itemName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItems", "sitecore/get/items/{dataStoreName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItems", "sitecore/get/items/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItems",
-                dataStoreName = ""
+                databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", "sitecore/get/template/{dataStoreName}/{*templateName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", "sitecore/get/template/{databaseName}/{*templateName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplate",
-                dataStoreName = "",
+                databaseName = "",
                 templateName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplates", "sitecore/get/templates/{dataStoreName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplates", "sitecore/get/templates/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplates",
-                dataStoreName = ""
+                databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DumpDataStore", "sitecore/get/dump/{dataStoreName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DumpDatabase", "sitecore/get/dump/{databaseName}", new
             {
                 controller = "ContentDelivery",
-                action = "DumpDataStore",
-                dataStoreName = ""
+                action = "DumpDatabase",
+                databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "sitecore/get/item/{dataStoreName}/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "sitecore/get/item/{databaseName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItem",
-                dataStoreName = "",
+                databaseName = "",
                 itemName = ""
-            });
-
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.Call", "sitecore/call/{*className}", new
-            {
-                controller = "ContentDelivery",
-                action = "Call",
-                className = ""
             });
         }
     }

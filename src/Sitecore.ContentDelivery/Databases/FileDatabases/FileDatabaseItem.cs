@@ -4,13 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Sitecore.ContentDelivery.DataStores.FileDataStores
+namespace Sitecore.ContentDelivery.Databases.FileDatabases
 {
-    public class FileDataStoreItem
+    public class FileDatabaseItem
     {
-        public FileDataStoreItem([NotNull] FileDataStore dataStore, [CanBeNull] FileDataStoreItem parent, Guid id, [NotNull] string name, string displayName, [NotNull] string icon16X16, [NotNull] string icon32X32, [NotNull] string template, Guid templateId, [NotNull] string path, int childCount, string mediaUrl)
+        public FileDatabaseItem([NotNull] FileDatabase database, [CanBeNull] FileDatabaseItem parent, Guid id, [NotNull] string name, string displayName, [NotNull] string icon16X16, [NotNull] string icon32X32, [NotNull] string template, Guid templateId, [NotNull] string path, int childCount, string mediaUrl)
         {
-            DataStore = dataStore;
+            Database = database;
             Parent = parent;
             Id = id;
             Name = name;
@@ -26,13 +26,13 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
 
         public int ChildCount { get; }
 
-        public IEnumerable<FileDataStoreItem> Children => DataStore.Items.Where(i => i.Parent == this);
+        public IEnumerable<FileDatabaseItem> Children => Database.Items.Where(i => i.Parent == this);
 
         [NotNull]
         public string DisplayName { get; }
 
         [NotNull]
-        public ICollection<FileDataStoreField> Fields { get; } = new List<FileDataStoreField>();
+        public ICollection<FileDatabaseField> Fields { get; } = new List<FileDatabaseField>();
 
         [NotNull]
         public string Icon16X16 { get; }
@@ -59,7 +59,7 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
         public string Name { get; }
 
         [CanBeNull]
-        public FileDataStoreItem Parent { get; set; }
+        public FileDatabaseItem Parent { get; set; }
 
         [NotNull]
         public string Path { get; }
@@ -70,6 +70,6 @@ namespace Sitecore.ContentDelivery.DataStores.FileDataStores
         public Guid TemplateId { get; }
 
         [NotNull]
-        protected FileDataStore DataStore { get; }
+        protected FileDatabase Database { get; }
     }
 }

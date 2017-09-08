@@ -1,6 +1,6 @@
 ﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
 
-namespace Sitecore.ContentDelivery.DataStores
+namespace Sitecore.ContentDelivery.Databases
 {
     public class FieldInfo
     {

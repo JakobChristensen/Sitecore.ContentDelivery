@@ -6,7 +6,7 @@ using Sitecore.Resources.Media;
 using Sitecore.Web;
 using Sitecore.Web.UI;
 
-namespace Sitecore.ContentDelivery.DataStores.Formatters
+namespace Sitecore.ContentDelivery.Databases.Formatters
 {
     public class FieldValueFormatter : IFieldValueFormatter
     {

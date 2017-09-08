@@ -3,20 +3,20 @@
 using System.Web.Mvc;
 using Sitecore.ContentDelivery.Web;
 
-namespace Sitecore.ContentDelivery.DataStores
+namespace Sitecore.ContentDelivery.Databases
 {
-    public abstract class DataStoreBase : IDataStore
+    public abstract class DatabaseBase : IDatabase
     {
-        protected DataStoreBase(string dataStoreName)
+        protected DatabaseBase([NotNull] string databaseName)
         {
-            DataStoreName = dataStoreName;
+            DatabaseName = databaseName;
         }
 
-        public string DataStoreName { get; }
+        public string DatabaseName { get; }
 
         public abstract ActionResult GetChildren(RequestParameters requestParameters, string itemName);
 
-        public abstract ActionResult GetDataStore(RequestParameters requestParameters);
+        public abstract ActionResult GetDatabase(RequestParameters requestParameters);
 
         public abstract ActionResult GetItems(RequestParameters requestParameters);
 
