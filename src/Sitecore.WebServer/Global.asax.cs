@@ -10,7 +10,7 @@ namespace Sitecore.WebServer
         protected void Application_Start()
         {
             ContentDeliveryConfig.RegisterRoutes();
-            ContentDeliveryConfig.MountDataStores();
+            ContentDeliveryConfig.MountDatabases();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+﻿// © 2015-2017 by Jakob Christensen. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -27,6 +27,10 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
 
         [NotNull]
         public ICollection<FileDatabaseItem> Items { get; } = new List<FileDatabaseItem>();
+
+        public ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
+
+        public ActionResult DeleteItems(RequestParameters requestParameters, IEnumerable<string> items) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
 
         public virtual ActionResult GetChildren(RequestParameters requestParameters, string itemName)
         {
@@ -192,7 +196,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetItems(RequestParameters requestParameters)
+        public virtual ActionResult GetItems([NotNull] RequestParameters requestParameters)
         {
             var result = Filter(Items.AsQueryable(), requestParameters).Where(i => i.Name != "$name" && i.Name != "__Standard Values").ToList();
             var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDatabaseItem>;
@@ -274,6 +278,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
 
                 output.WriteStartObject();
                 output.WritePropertyString("id", field.Id.ToString("B").ToUpperInvariant());
+                output.WritePropertyString("uri", DatabaseName + "/" + templateItem.Id + "/" + field.Id.ToString("B").ToUpperInvariant());
                 output.WritePropertyString("name", field.Name);
                 output.WritePropertyString("displayName", field.DisplayName);
                 output.WritePropertyString("type", field["Type"]);
@@ -289,7 +294,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetTemplates(RequestParameters requestParameters)
+        public virtual ActionResult GetTemplates([NotNull] RequestParameters requestParameters)
         {
             var result = Filter(Items.AsQueryable(), requestParameters).Where(t => t.TemplateId == TemplateIDs.Template.Guid).Distinct().ToList();
             var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDatabaseItem>;
@@ -327,7 +332,10 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        protected virtual IQueryable<FileDatabaseItem> Filter(IQueryable<FileDatabaseItem> queryable, RequestParameters requestParameters)
+        public virtual ActionResult SaveItems(RequestParameters requestParameters, Dictionary<string, string> fields) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
+
+        [NotNull]
+        protected virtual IQueryable<FileDatabaseItem> Filter([NotNull] IQueryable<FileDatabaseItem> queryable, [NotNull] RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Path))
             {
@@ -384,13 +392,13 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
         {
             if (itemName.StartsWith("{"))
             {
-                Guid guid;
-                if (!Guid.TryParse(itemName, out guid))
+                if (!Guid.TryParse(itemName, out var guid))
                 {
                     throw new InvalidOperationException("ID is not valid");
                 }
 
                 yield return Items.FirstOrDefault(i => i.Id == guid);
+
                 yield break;
             }
 
@@ -402,6 +410,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
                 }
 
                 yield return Items.FirstOrDefault(i => i.Path == itemName);
+
                 yield break;
             }
 
@@ -416,13 +425,13 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
         {
             if (templateName.StartsWith("{"))
             {
-                Guid guid;
-                if (!Guid.TryParse(templateName, out guid))
+                if (!Guid.TryParse(templateName, out var guid))
                 {
                     throw new InvalidOperationException("ID is not valid");
                 }
 
                 yield return Items.FirstOrDefault(i => i.Id == guid);
+
                 yield break;
             }
 
@@ -434,6 +443,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
                 }
 
                 yield return Items.FirstOrDefault(i => i.Path == templateName);
+
                 yield break;
             }
 
@@ -464,7 +474,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             output.WriteEndArray();
         }
 
-        protected virtual void WriteItemFields(JsonTextWriter output, RequestParameters request, FileDatabaseItem item)
+        protected virtual void WriteItemFields(JsonTextWriter output, [NotNull] RequestParameters request, FileDatabaseItem item)
         {
             if (!request.Fields.Any())
             {
@@ -509,6 +519,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
                 {
                     output.WriteStartObject();
                     output.WritePropertyString("id", field.Id.ToString("B").ToUpperInvariant());
+                    output.WritePropertyString("uri", DatabaseName + "/" + item.Id.ToString("B").ToUpperInvariant() + "/en/1/" + field.Id.ToString("B").ToUpperInvariant());
                     output.WritePropertyString("name", field.Name);
                     output.WritePropertyString("displayName", field.DisplayName);
                     output.WritePropertyString("value", value);
@@ -530,9 +541,10 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             }
         }
 
-        protected virtual void WriteItemHeader(JsonTextWriter output, FileDatabaseItem item)
+        protected virtual void WriteItemHeader([NotNull] JsonTextWriter output, [NotNull] FileDatabaseItem item)
         {
             output.WritePropertyString("id", item.Id.ToString("B").ToUpperInvariant());
+            output.WritePropertyString("uri", DatabaseName + "/" + item.Id.ToString("B").ToUpperInvariant() + "/en/1/");
             output.WritePropertyString("name", item.Name);
             output.WritePropertyString("displayName", item.DisplayName);
             output.WritePropertyString("database", DatabaseName);
@@ -549,7 +561,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             }
         }
 
-        protected virtual void WriteMetaData(JsonTextWriter output)
+        protected virtual void WriteMetaData([NotNull] JsonTextWriter output)
         {
             output.WriteStartObject("metadata");
             output.WritePropertyString("version", "1");

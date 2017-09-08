@@ -3,8 +3,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Web.Mvc;
 using Newtonsoft.Json.Linq;
 using Sitecore.ContentDelivery.Extensions;
+using Sitecore.ContentDelivery.Web;
 
 namespace Sitecore.ContentDelivery.Databases.FileDatabases
 {

@@ -1,11 +1,11 @@
-﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+﻿// © 2015-2017 by Jakob Christensen. All rights reserved.
 
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Web;
 using System.Web.Mvc;
 using Newtonsoft.Json;
 using Sitecore.Configuration;
@@ -15,6 +15,7 @@ using Sitecore.ContentSearch;
 using Sitecore.ContentSearch.SearchTypes;
 using Sitecore.Data;
 using Sitecore.Data.Items;
+using Sitecore.Data.Managers;
 using Sitecore.Globalization;
 using Sitecore.Resources;
 using Sitecore.Resources.Media;
@@ -25,13 +26,105 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 {
     public class ItemDatabase : DatabaseBase
     {
-        public ItemDatabase(string databaseName) : base(databaseName)
+        public ItemDatabase([NotNull] string databaseName) : base(databaseName)
         {
             Database = Factory.GetDatabase(databaseName);
         }
 
         [NotNull]
         public Database Database { get; }
+
+        public override ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName)
+        {
+            var output = new JsonContentResultWriter(new StringWriter());
+            WriteMetaData(output);
+
+            var n = itemPath.LastIndexOf('/');
+            if (n < 0)
+            {
+                output.WriteError("Parent path not found: " + itemPath);
+                return output.ToContentResult();
+            }
+
+            var parentPath = itemPath.Left(n);
+            var parentItem = Database.GetItem(parentPath);
+
+            if (parentItem == null)
+            {
+                output.WriteError("Parent item not found: " + parentPath);
+                return output.ToContentResult();
+            }
+
+            if (!parentItem.Security.CanCreate(Context.User))
+            {
+                output.WriteError("You do not have permission to create items under item: " + parentItem.Paths.Path);
+                return output.ToContentResult();
+            }
+
+            var templateItem = Database.GetItem(templateName);
+            if (templateItem == null)
+            {
+                output.WriteError("Template not found: " + templateName);
+                return output.ToContentResult();
+            }
+
+            var itemName = itemPath.Mid(n + 1);
+
+            try
+            {
+                var newItem = parentItem.Add(itemName, new TemplateID(templateItem.ID));
+                if (newItem != null)
+                {
+                    output.WriteStartObject("item");
+                    output.WriteStartObject();
+                    WriteItemHeader(output, newItem);
+                    output.WriteEndObject();
+                    output.WriteEndObject();
+                }
+                else
+                {
+                    output.WriteError("Failed to create item under " + parentItem.Paths.Path);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                output.WriteError("Failed to create item under " + parentItem.Paths.Path + ": " + ex.Message);
+            }
+
+            return output.ToContentResult();
+        }
+
+        public override ActionResult DeleteItems(RequestParameters requestParameters, IEnumerable<string> items)
+        {
+            var output = new JsonContentResultWriter(new StringWriter());
+            WriteMetaData(output);
+
+            foreach (var itemPath in items)
+            {
+                try
+                {
+                    var item = Database.GetItem(itemPath);
+                    if (item == null)
+                    {
+                        continue;
+                    }
+
+                    if (!item.Parent.Security.CanDelete(Context.User))
+                    {
+                        output.WriteError("You do not have permission to delete item: " + item.Paths.Path);
+                        continue;
+                    }
+
+                    item.Recycle();
+                }
+                catch (System.Exception ex)
+                {
+                    output.WriteError("Failed to delete item: " + ex.Message);
+                }
+            }
+
+            return output.ToContentResult();
+        }
 
         public override ActionResult GetChildren(RequestParameters requestParameters, string itemName)
         {
@@ -55,61 +148,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             }
 
             var children = item.Children as IEnumerable<Item>;
-
-            foreach (var pair in requestParameters.Parameters)
-            {
-                var fieldName = pair.Key;
-                var value = pair.Value;
-
-                if (!fieldName.EndsWith("]"))
-                {
-                    children = children.Where(i => i[fieldName] == value);
-                    continue;
-                }
-
-                var n = fieldName.LastIndexOf('[');
-                if (n < 0)
-                {
-                    throw new SyntaxErrorException("[ expected");
-                }
-
-                var op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
-                fieldName = fieldName.Left(n).Trim();
-
-                switch (op)
-                {
-                    case "not":
-                        children = children.Where(i => i[fieldName] != value);
-                        break;
-
-                    case "in":
-                        var l1 = value.Split('|');
-                        children = children.Where(i => l1.Contains(i[fieldName]));
-                        break;
-
-                    case "not in":
-                        var l2 = value.Split('|');
-                        children = children.Where(i => !l2.Contains(i[fieldName]));
-                        break;
-
-                    case "has":
-                        children = children.Where(t => !string.IsNullOrEmpty(t[fieldName]));
-                        break;
-                }
-            }
-
-            children = children.ToList();
-            var count = children.Count();
-
-            if (requestParameters.Skip > 0)
-            {
-                children = children.Skip(requestParameters.Skip);
-            }
-
-            if (requestParameters.Take > 0)
-            {
-                children = children.Take(requestParameters.Take);
-            }
+            children = FilterItems(requestParameters, children, out var count);
 
             var output = new JsonContentResultWriter(new StringWriter());
             WriteMetaData(output);
@@ -134,7 +173,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             return output.ToContentResult();
         }
 
-        public override ActionResult GetDatabase([NotNull] RequestParameters requestParameters)
+        public override ActionResult GetDatabase(RequestParameters requestParameters)
         {
             SetContext(requestParameters);
 
@@ -172,7 +211,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             return output.ToContentResult();
         }
 
-        public override ActionResult GetItem([NotNull] RequestParameters requestParameters, string itemName)
+        public override ActionResult GetItem(RequestParameters requestParameters, string itemName)
         {
             SetContext(requestParameters);
 
@@ -195,7 +234,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 
             if (requestParameters.Version != 0)
             {
-                item = item.Database.GetItem(item.ID, item.Language, new Data.Version(requestParameters.Version));
+                item = item.Database.GetItem(item.ID, item.Language, Version.Parse(requestParameters.Version));
                 if (item == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item version not found");
@@ -212,7 +251,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             return output.ToContentResult();
         }
 
-        public override ActionResult GetItems([NotNull] RequestParameters requestParameters)
+        public override ActionResult GetItems(RequestParameters requestParameters)
         {
             SetContext(requestParameters);
 
@@ -221,7 +260,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
             using (var context = index.CreateSearchContext())
             {
-                var queryable = Filter(context.GetQueryable<SearchResultItem>(), requestParameters);
+                var queryable = FilterSearch(context.GetQueryable<SearchResultItem>(), requestParameters);
 
                 result = queryable.Where(i => i.Name != "$name" && i.Name != "__Standard Values").Select(item => item.ItemId).ToList().Distinct().ToList();
 
@@ -263,7 +302,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             return output.ToContentResult();
         }
 
-        public override ActionResult GetTemplate([NotNull] RequestParameters requestParameters, string templateName)
+        public override ActionResult GetTemplate(RequestParameters requestParameters, string templateName)
         {
             SetContext(requestParameters);
 
@@ -309,6 +348,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 
                 output.WriteStartObject();
                 output.WritePropertyString("id", field.ID.ToString());
+                output.WritePropertyString("uri", template.Database.Name + "/" + template.ID + "/" + field.ID);
                 output.WritePropertyString("name", field.Name);
                 output.WritePropertyString("displayName", field.DisplayName);
                 output.WritePropertyString("type", field.Type);
@@ -324,7 +364,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             return output.ToContentResult();
         }
 
-        public override ActionResult GetTemplates([NotNull] RequestParameters requestParameters)
+        public override ActionResult GetTemplates(RequestParameters requestParameters)
         {
             SetContext(requestParameters);
 
@@ -333,7 +373,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
             using (var context = index.CreateSearchContext())
             {
-                var queryable = Filter(context.GetQueryable<SearchResultItem>(), requestParameters);
+                var queryable = FilterSearch(context.GetQueryable<SearchResultItem>(), requestParameters);
 
                 result = queryable.Where(t => t.TemplateId == TemplateIDs.Template).Select(item => item.ItemId).ToList().Distinct().ToList();
 
@@ -373,7 +413,154 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             return output.ToContentResult();
         }
 
-        protected virtual IQueryable<SearchResultItem> Filter(IQueryable<SearchResultItem> queryable, [NotNull] RequestParameters requestParameters)
+        public override ActionResult SaveItems(RequestParameters requestParameters, Dictionary<string, string> fields)
+        {
+            var output = new JsonContentResultWriter(new StringWriter());
+            WriteMetaData(output);
+
+            var fieldList = new List<FieldEditorField>();
+            foreach (var pair in fields)
+            {
+                var key = pair.Key;
+                var value = HttpUtility.UrlDecode(pair.Value) ?? string.Empty;
+
+                var parts = key.Split('/');
+                if (parts.Length != 5)
+                {
+                    output.WriteError("Invalid Field Uri: " + key);
+                    continue;
+                }
+
+                var languageName = parts[2];
+                if (languageName == "-")
+                {
+                    languageName = LanguageManager.DefaultLanguage.Name;
+                }
+
+                var versionNumber = parts[3];
+                if (versionNumber == "-")
+                {
+                    versionNumber = "0";
+                }
+
+                var databaseName = parts[0];
+                var itemId = parts[1];
+                var language = Language.Parse(languageName);
+                var version = Version.Parse(versionNumber);
+                var fieldId = parts[4];
+
+                var field = new FieldEditorField(databaseName, itemId, language, version, fieldId, value);
+
+                fieldList.Add(field);
+            }
+
+            var items = new Dictionary<string, Item>();
+
+            foreach (var field in fieldList)
+            {
+                var key = field.DatabaseName + "/" + field.ItemId + "/" + field.Language + "/" + field.Version;
+                if (!items.TryGetValue(key, out var item))
+                {
+                    var database = Factory.GetDatabase(field.DatabaseName);
+
+                    item = database.GetItem(field.ItemId, field.Language, field.Version);
+                    if (item == null)
+                    {
+                        output.WriteError("Item not found: " + field.ItemId + "/" + field.Language.Name + "/" + field.Version.Number);
+                        continue;
+                    }
+
+                    if (!item.Security.CanWrite(Context.User))
+                    {
+                        output.WriteError("You do not have permission to write to this item: " + item.Paths.Path);
+                        continue;
+                    }
+
+                    items[key] = item;
+
+                    try
+                    {
+                        item.Editing.BeginEdit();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        output.WriteError("An exception occured while saving item: " + item.Paths.Path + "; " + ex.Message);
+                        continue;
+                    }
+                }
+
+                item[field.FieldId] = field.Value;
+            }
+
+            foreach (var pair in items)
+            {
+                pair.Value.Editing.EndEdit();
+            }
+
+            return output.ToContentResult();
+        }
+
+        [NotNull]
+        protected virtual IEnumerable<Item> FilterItems([NotNull] RequestParameters requestParameters, IEnumerable<Item> items, out int count)
+        {
+            foreach (var pair in requestParameters.Parameters)
+            {
+                var fieldName = pair.Key;
+                var value = pair.Value;
+
+                if (!fieldName.EndsWith("]"))
+                {
+                    items = items.Where(i => i[fieldName] == value);
+                    continue;
+                }
+
+                var n = fieldName.LastIndexOf('[');
+                if (n < 0)
+                {
+                    throw new SyntaxErrorException("[ expected");
+                }
+
+                var op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
+                fieldName = fieldName.Left(n).Trim();
+
+                switch (op)
+                {
+                    case "not":
+                        items = items.Where(i => i[fieldName] != value);
+                        break;
+
+                    case "in":
+                        var l1 = value.Split('|');
+                        items = items.Where(i => l1.Contains(i[fieldName]));
+                        break;
+
+                    case "not in":
+                        var l2 = value.Split('|');
+                        items = items.Where(i => !l2.Contains(i[fieldName]));
+                        break;
+
+                    case "has":
+                        items = items.Where(t => !string.IsNullOrEmpty(t[fieldName]));
+                        break;
+                }
+            }
+
+            count = items.Count();
+
+            if (requestParameters.Skip > 0)
+            {
+                items = items.Skip(requestParameters.Skip);
+            }
+
+            if (requestParameters.Take > 0)
+            {
+                items = items.Take(requestParameters.Take);
+            }
+
+            return items;
+        }
+
+        protected virtual IQueryable<SearchResultItem> FilterSearch(IQueryable<SearchResultItem> queryable, [NotNull] RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Path))
             {
@@ -400,9 +587,9 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                     switch (fieldName.ToLowerInvariant())
                     {
                         case "id":
-                            if (!Guid.TryParse(value, out var itemGuid))
+                            if (!System.Guid.TryParse(value, out var itemGuid))
                             {
-                                throw new InvalidOperationException("Not a valid guid");
+                                throw new System.InvalidOperationException("Not a valid guid");
                             }
 
                             var itemId = new ID(itemGuid);
@@ -418,9 +605,9 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                             continue;
 
                         case "templateid":
-                            if (!Guid.TryParse(value, out var templateGuid))
+                            if (!System.Guid.TryParse(value, out var templateGuid))
                             {
-                                throw new InvalidOperationException("Not a valid guid");
+                                throw new System.InvalidOperationException("Not a valid guid");
                             }
 
                             var templateId = new ID(templateGuid);
@@ -501,6 +688,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             if (ID.IsID(templateName))
             {
                 yield return Database.GetItem(templateName);
+
                 yield break;
             }
 
@@ -512,6 +700,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                 }
 
                 yield return Database.GetItem(templateName);
+
                 yield break;
             }
 
@@ -581,7 +770,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                         continue;
                     }
                 }
-                else if (!request.Fields.Any(f => string.Equals(f.FieldName, field.Name, StringComparison.OrdinalIgnoreCase)))
+                else if (!request.Fields.Any(f => string.Equals(f.FieldName, field.Name, System.StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -590,7 +779,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 
                 if (!includeAllFields)
                 {
-                    var fieldDescriptor = request.Fields.First(f => string.Equals(f.FieldName, field.Name, StringComparison.OrdinalIgnoreCase));
+                    var fieldDescriptor = request.Fields.First(f => string.Equals(f.FieldName, field.Name, System.StringComparison.OrdinalIgnoreCase));
 
                     foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
                     {
@@ -613,6 +802,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                 {
                     output.WriteStartObject();
                     output.WritePropertyString("id", field.ID.ToString());
+                    output.WritePropertyString("uri", item.Database.Name + "/" + item.ID + "/" + item.Language.Name + "/" + item.Version.Number + "/" + field.ID);
                     output.WritePropertyString("name", field.Name);
                     output.WritePropertyString("displayName", field.DisplayName);
                     output.WritePropertyString("value", value);
@@ -637,6 +827,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         protected virtual void WriteItemHeader([NotNull] JsonTextWriter output, [NotNull] Item item)
         {
             output.WritePropertyString("id", item.ID.ToString());
+            output.WritePropertyString("uri", item.Database.Name + "/" + item.ID + "/" + item.Language.Name + "/" + item.Version.Number);
             output.WritePropertyString("name", item.Name);
             output.WritePropertyString("displayName", item.DisplayName);
             output.WritePropertyString("database", item.Database.Name);
@@ -656,10 +847,42 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         protected virtual void WriteMetaData([NotNull] JsonTextWriter output)
         {
             output.WriteStartObject("metadata");
-            output.WritePropertyString("version", "1");
+            output.WritePropertyString("version", "1.0.0");
             output.WritePropertyString("user", Context.GetUserName());
             output.WritePropertyString("language", Context.Language.Name);
+            output.WritePropertyString("host", WebUtil.GetServerUrl());
             output.WriteEndObject();
+        }
+
+        private class FieldEditorField
+        {
+            public FieldEditorField([NotNull] string databaseName, [NotNull] string itemId, [NotNull] Language language, [NotNull] Version version, [NotNull] string fieldId, [NotNull] string value)
+            {
+                DatabaseName = databaseName;
+                ItemId = itemId;
+                Language = language;
+                Version = version;
+                FieldId = fieldId;
+                Value = value;
+            }
+
+            [NotNull]
+            public string DatabaseName { get; }
+
+            [NotNull]
+            public string FieldId { get; }
+
+            [NotNull]
+            public string ItemId { get; }
+
+            [NotNull]
+            public Language Language { get; }
+
+            [NotNull]
+            public string Value { get; }
+
+            [NotNull]
+            public Version Version { get; }
         }
     }
 }

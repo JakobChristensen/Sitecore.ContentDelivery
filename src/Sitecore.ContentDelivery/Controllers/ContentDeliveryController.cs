@@ -1,4 +1,4 @@
-// © 2015 Sitecore Corporation A/S. All rights reserved.
+// © 2015-2017 by Jakob Christensen. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
 using Newtonsoft.Json.Linq;
+using Sitecore.ContentDelivery.Databases;
 using Sitecore.ContentDelivery.Extensions;
 using Sitecore.ContentDelivery.Web;
 
@@ -15,6 +16,52 @@ namespace Sitecore.ContentDelivery.Controllers
 {
     public class ContentDeliveryController : ContentDeliveryControllerBase
     {
+        [NotNull]
+        public virtual ActionResult AddItem(string databaseName, string itemPath, string template)
+        {
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            if (actionResult != null)
+            {
+                return actionResult;
+            }
+
+            return database.AddItem(requestParameters, itemPath, template);
+        }
+
+        [NotNull]
+        public virtual ActionResult DeleteItems(string databaseName, string itemName)
+        {
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            if (actionResult != null)
+            {
+                return actionResult;
+            }
+
+            var items = GetItemPaths(itemName);
+            return database.DeleteItems(requestParameters, items);
+        }
+
+        [NotNull]
+        public virtual ActionResult DumpDatabase(string databaseName)
+        {
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            if (actionResult != null)
+            {
+                return actionResult;
+            }
+
+            var dictionary = new Dictionary<string, string>
+            {
+                ["children"] = "9999",
+                ["fields"] = "*",
+                ["systemfields"] = "true"
+            };
+
+            requestParameters = new RequestParameters(dictionary);
+
+            return database.GetItem(requestParameters, "{11111111-1111-1111-1111-111111111111}");
+        }
+
         [NotNull]
         public virtual ActionResult GetBundle()
         {
@@ -93,146 +140,111 @@ namespace Sitecore.ContentDelivery.Controllers
         [NotNull]
         public virtual ActionResult GetChildren(string databaseName, string itemName)
         {
-            var authenticationResult = AuthenticateUser();
-            if (authenticationResult != null)
-            {
-                return authenticationResult;
-            }
-
-            var database = ContentDeliveryManager.GetDatabase(databaseName);
-            if (database == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
-            }
-
-            var requestParameters = new RequestParameters(Request);
-
-            return database.GetChildren(requestParameters, itemName);
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.GetChildren(requestParameters, itemName);
         }
 
         [NotNull]
         public virtual ActionResult GetDatabase(string databaseName)
         {
-            var authenticationResult = AuthenticateUser();
-            if (authenticationResult != null)
-            {
-                return authenticationResult;
-            }
-
-            var database = ContentDeliveryManager.GetDatabase(databaseName);
-            if (database == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
-            }
-
-            var requestParameters = new RequestParameters(Request);
-
-            return database.GetDatabase(requestParameters);
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.GetDatabase(requestParameters);
         }
 
         [NotNull]
         public virtual ActionResult GetItem(string databaseName, string itemName)
         {
-            var authenticationResult = AuthenticateUser();
-            if (authenticationResult != null)
-            {
-                return authenticationResult;
-            }
-
-            var database = ContentDeliveryManager.GetDatabase(databaseName);
-            if (database == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
-            }
-
-            var requestParameters = new RequestParameters(Request);
-
-            return database.GetItem(requestParameters, itemName);
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.GetItem(requestParameters, itemName);
         }
 
         [NotNull]
         public virtual ActionResult GetItems(string databaseName)
         {
-            var authenticationResult = AuthenticateUser();
-            if (authenticationResult != null)
-            {
-                return authenticationResult;
-            }
-
-            var database = ContentDeliveryManager.GetDatabase(databaseName);
-            if (database == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
-            }
-
-            var requestParameters = new RequestParameters(Request);
-
-            return database.GetItems(requestParameters);
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.GetItems(requestParameters);
         }
 
         [NotNull]
         public virtual ActionResult GetTemplate(string databaseName, string templateName)
         {
-            var authenticationResult = AuthenticateUser();
-            if (authenticationResult != null)
-            {
-                return authenticationResult;
-            }
-
-            var database = ContentDeliveryManager.GetDatabase(databaseName);
-            if (database == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
-            }
-
-            var requestParameters = new RequestParameters(Request);
-
-            return database.GetTemplate(requestParameters, templateName);
-        }
-
-        [NotNull]
-        public virtual ActionResult DumpDatabase(string databaseName)
-        {
-            var authenticationResult = AuthenticateUser();
-            if (authenticationResult != null)
-            {
-                return authenticationResult;
-            }
-
-            var database = ContentDeliveryManager.GetDatabase(databaseName);
-            if (database == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
-            }
-
-            var dictionary = new Dictionary<string, string>();
-            dictionary["children"] = "999";
-            dictionary["fields"] = "*";
-            dictionary["systemfields"] = "true";
-
-            var requestParameters = new RequestParameters(dictionary);
-
-            return database.GetItem(requestParameters, "{11111111-1111-1111-1111-111111111111}");
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.GetTemplate(requestParameters, templateName);
         }
 
         [NotNull]
         public virtual ActionResult GetTemplates(string databaseName)
         {
-            var authenticationResult = AuthenticateUser();
-            if (authenticationResult != null)
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.GetTemplates(requestParameters);
+        }
+
+        [NotNull]
+        public virtual ActionResult SaveItems(string databaseName)
+        {
+            var fields = new Dictionary<string, string>();
+            foreach (var key in Request.Form.AllKeys)
             {
-                return authenticationResult;
+                if (key != null)
+                {
+                    var fieldUri = key;
+
+                    // trim off "http://website/"
+                    var n = fieldUri.IndexOf("://", StringComparison.Ordinal);
+                    if (n >= 0)
+                    {
+                        n = fieldUri.IndexOf('/', n + 3);
+                        if (n >= 0)
+                        {
+                            fieldUri = fieldUri.Mid(n + 1);
+                        }
+                    }
+
+                    fields[fieldUri] = Request.Form[key];
+                }
             }
 
-            var database = ContentDeliveryManager.GetDatabase(databaseName);
-            if (database == null)
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.SaveItems(requestParameters, fields);
+        }
+
+        [NotNull]
+        protected virtual IEnumerable<string> GetItemPaths([NotNull] string itemName)
+        {
+            var items = new List<string>();
+            if (!string.IsNullOrEmpty(itemName))
             {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
+                items.Add(itemName);
             }
 
-            var requestParameters = new RequestParameters(Request);
+            foreach (var key in Request.Form.AllKeys)
+            {
+                items.Add(Request.Form[key]);
+            }
 
-            return database.GetTemplates(requestParameters);
+            return items;
+        }
+
+        protected virtual void PreprocessRequest(string databaseName, [CanBeNull] out ActionResult actionResult, [NotNull] out RequestParameters requestParameters, [NotNull] out IDatabase database)
+        {
+            // ReSharper disable once AssignNullToNotNullAttribute
+            database = null;
+            requestParameters = new RequestParameters(Request);
+
+            actionResult = AuthenticateUser();
+            if (actionResult != null)
+            {
+                return;
+            }
+
+            var db = ContentDeliveryManager.GetDatabase(databaseName);
+            if (db == null)
+            {
+                actionResult = new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
+                return;
+            }
+
+            database = db;
         }
     }
 }

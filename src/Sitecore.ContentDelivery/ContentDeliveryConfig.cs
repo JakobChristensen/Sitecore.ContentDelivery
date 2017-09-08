@@ -90,6 +90,30 @@ namespace Sitecore.ContentDelivery
                 databaseName = "",
                 itemName = ""
             });
+
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.PutItems", "sitecore/put/items/{databaseName}", new
+            {
+                controller = "ContentDelivery",
+                action = "SaveItems",
+                databaseName = ""
+            });
+
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DeleteItems", "sitecore/delete/items/{databaseName}/{*itemName}", new
+            {
+                controller = "ContentDelivery",
+                action = "DeleteItems",
+                databaseName = "",
+                itemName = ""
+
+            });
+
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.AddItems", "sitecore/put/item/{databaseName}/{*itemName}", new
+            {
+                controller = "ContentDelivery",
+                action = "AddItem",
+                databaseName = "",
+                itemName = ""
+            });
         }
     }
 }

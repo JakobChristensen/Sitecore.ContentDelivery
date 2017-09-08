@@ -15,10 +15,7 @@ namespace Sitecore.ContentDelivery
         public static ICollection<IFieldValueFormatter> FieldValueFormatters { get; } = new List<IFieldValueFormatter>();
 
         [CanBeNull]
-        public static IDatabase GetDatabase([NotNull] string databaseName)
-        {
-            return Databases.FirstOrDefault(d => d.DatabaseName == databaseName);
-        }
+        public static IDatabase GetDatabase([NotNull] string databaseName) => Databases.FirstOrDefault(d => d.DatabaseName == databaseName);
 
         [NotNull]
         public static IDatabase MountDatabase([NotNull] IDatabase database)
