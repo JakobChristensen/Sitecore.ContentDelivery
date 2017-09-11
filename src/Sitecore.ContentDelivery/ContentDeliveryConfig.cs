@@ -107,12 +107,12 @@ namespace Sitecore.ContentDelivery
 
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.AddItems", "sitecore/put/item/{databaseName}/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.AddItems", "sitecore/put/item/{databaseName}/{*itemPath}", new
             {
                 controller = "ContentDelivery",
                 action = "AddItem",
                 databaseName = "",
-                itemName = ""
+                itemPath = ""
             });
         }
     }

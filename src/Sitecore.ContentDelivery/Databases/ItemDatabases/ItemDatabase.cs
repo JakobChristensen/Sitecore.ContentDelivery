@@ -76,9 +76,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                 if (newItem != null)
                 {
                     output.WriteStartObject("item");
-                    output.WriteStartObject();
                     WriteItemHeader(output, newItem);
-                    output.WriteEndObject();
                     output.WriteEndObject();
                 }
                 else

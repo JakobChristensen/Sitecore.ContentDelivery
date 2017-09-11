@@ -25,6 +25,11 @@ namespace Sitecore.ContentDelivery.Controllers
                 return actionResult;
             }
 
+            if (!itemPath.StartsWith("/"))
+            {
+                itemPath = "/" + itemPath;
+            }
+
             return database.AddItem(requestParameters, itemPath, template);
         }
 
@@ -179,7 +184,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return actionResult ?? database.GetTemplates(requestParameters);
         }
 
-        [NotNull]
+        [NotNull, HttpPost]
         public virtual ActionResult SaveItems(string databaseName)
         {
             var fields = new Dictionary<string, string>();
