@@ -162,6 +162,29 @@ namespace Sitecore.ContentDelivery.Controllers
         }
 
         [NotNull]
+        public virtual ActionResult GetDatabases()
+        {
+            var output = new JsonContentResultWriter(new StringWriter());
+            output.WriteStartObject("metadata");
+            output.WritePropertyString("version", "1.0.0");
+            output.WriteEndObject();
+
+            output.WriteStartArray("databases");
+
+            foreach (var database in ContentDeliveryManager.Databases)
+            {
+                output.WriteStartObject();
+                output.WritePropertyString("name", database.DatabaseName);
+                output.WritePropertyString("type", database.GetType().FullName ?? string.Empty);
+                output.WriteEndObject();
+            }
+
+            output.WriteEndArray();
+
+            return output.ToContentResult();
+        }
+
+        [NotNull]
         public virtual ActionResult GetItem(string databaseName, string itemName)
         {
             PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
@@ -203,55 +226,6 @@ namespace Sitecore.ContentDelivery.Controllers
 
             PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
             return actionResult ?? database.SaveItems(requestParameters, fields);
-        }
-
-        [NotNull]
-        protected virtual IEnumerable<string> GetItemUris([NotNull] string itemUri)
-        {
-            var itemUris = new List<string>();
-
-            if (!string.IsNullOrEmpty(itemUri))
-            {
-                itemUris.Add(itemUri);
-            }
-
-            var queryString = WebUtil.GetQueryString("itemuris");
-            if (!string.IsNullOrEmpty(queryString))
-            {
-                itemUris.AddRange(queryString.Split(','));
-            }
-
-            foreach (var key in Request.Form.AllKeys)
-            {
-                if (key.StartsWith("itemuri", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    itemUris.Add(Request.Form[key]);
-                }
-            }
-
-            return itemUris;
-        }
-
-        protected virtual void PreprocessRequest(string databaseName, [CanBeNull] out ActionResult actionResult, [NotNull] out RequestParameters requestParameters, [NotNull] out IDatabase database)
-        {
-            // ReSharper disable once AssignNullToNotNullAttribute
-            database = null;
-            requestParameters = new RequestParameters(Request);
-
-            actionResult = AuthenticateUser();
-            if (actionResult != null)
-            {
-                return;
-            }
-
-            var db = ContentDeliveryManager.GetDatabase(databaseName);
-            if (db == null)
-            {
-                actionResult = new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
-                return;
-            }
-
-            database = db;
         }
 
         [CanBeNull]
@@ -304,5 +278,53 @@ namespace Sitecore.ContentDelivery.Controllers
             return null;
         }
 
+        [NotNull]
+        protected virtual IEnumerable<string> GetItemUris([NotNull] string itemUri)
+        {
+            var itemUris = new List<string>();
+
+            if (!string.IsNullOrEmpty(itemUri))
+            {
+                itemUris.Add(itemUri);
+            }
+
+            var queryString = WebUtil.GetQueryString("itemuris");
+            if (!string.IsNullOrEmpty(queryString))
+            {
+                itemUris.AddRange(queryString.Split(','));
+            }
+
+            foreach (var key in Request.Form.AllKeys)
+            {
+                if (key.StartsWith("itemuri", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    itemUris.Add(Request.Form[key]);
+                }
+            }
+
+            return itemUris;
+        }
+
+        protected virtual void PreprocessRequest(string databaseName, [CanBeNull] out ActionResult actionResult, [NotNull] out RequestParameters requestParameters, [NotNull] out IDatabase database)
+        {
+            // ReSharper disable once AssignNullToNotNullAttribute
+            database = null;
+            requestParameters = new RequestParameters(Request);
+
+            actionResult = AuthenticateUser();
+            if (actionResult != null)
+            {
+                return;
+            }
+
+            var db = ContentDeliveryManager.GetDatabase(databaseName);
+            if (db == null)
+            {
+                actionResult = new HttpStatusCodeResult(HttpStatusCode.NotFound, "Database not found");
+                return;
+            }
+
+            database = db;
+        }
     }
 }

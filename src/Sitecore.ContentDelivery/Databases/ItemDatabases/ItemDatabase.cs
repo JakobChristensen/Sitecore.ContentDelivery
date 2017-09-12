@@ -30,6 +30,8 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         [NotNull]
         public Database Database { get; protected set; }
 
+        public string RootItemPath { get; protected set; } = string.Empty;
+
         public override ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName)
         {
             var output = new JsonContentResultWriter(new StringWriter());
@@ -171,8 +173,8 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         {
             SetContext(requestParameters);
 
-            var rootItem = Database.GetRootItem();
-            if (rootItem == null)
+            var rootItems = string.IsNullOrEmpty(RootItemPath)? new[] { Database.GetRootItem() } : Database.GetItem(RootItemPath).Children.ToArray();
+            if (rootItems == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Root item not found");
             }
@@ -197,10 +199,17 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 
             output.WriteEndArray();
 
-            output.WriteStartObject("root");
-            WriteItemHeader(output, rootItem);
-            WriteItemFields(output, requestParameters, rootItem);
-            output.WriteEndObject();
+            output.WriteStartArray("roots");
+
+            foreach (var rootItem in rootItems)
+            {
+                output.WriteStartObject();
+                WriteItemHeader(output, rootItem);
+                WriteItemFields(output, requestParameters, rootItem);
+                output.WriteEndObject();
+            }
+
+            output.WriteEndArray();
 
             return output.ToContentResult();
         }
@@ -411,8 +420,12 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         {
             base.Initialize(parameters, currentDirectory, appDataDirectory);
 
-            parameters.TryGetValue("database", out var databaseName);
+            if (parameters.TryGetValue("rootitem", out var rootItem))
+            {
+                RootItemPath = rootItem;
+            }
 
+            parameters.TryGetValue("database", out var databaseName);
             if (string.IsNullOrEmpty(databaseName))
             {
                 Log.Error("Missing 'database' attribute", GetType());

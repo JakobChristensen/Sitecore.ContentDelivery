@@ -15,6 +15,12 @@ namespace Sitecore.ContentDelivery
                 action = "GetBundle"
             });
 
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetDatabases", basePath + "/get/databases", new
+            {
+                controller = "ContentDelivery",
+                action = "GetDatabases"
+            });
+
             RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetDatabase", basePath + "/get/{databaseName}", new
             {
                 controller = "ContentDelivery",

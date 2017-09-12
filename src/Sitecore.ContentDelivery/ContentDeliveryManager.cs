@@ -9,7 +9,7 @@ namespace Sitecore.ContentDelivery
 {
     public static class ContentDeliveryManager
     {
-        private static readonly ICollection<IDatabase> Databases = new List<IDatabase>();
+        public static readonly ICollection<IDatabase> Databases = new List<IDatabase>();
 
         [NotNull]
         public static ICollection<IFieldValueFormatter> FieldValueFormatters { get; } = new List<IFieldValueFormatter>();
