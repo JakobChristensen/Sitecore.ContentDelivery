@@ -12,6 +12,9 @@ namespace Sitecore.ContentDelivery.Databases
         string DatabaseName { get; }
 
         [NotNull]
+        IDictionary<string, string> RequestParameters { get; }
+
+        [NotNull]
         ActionResult AddItem([NotNull] RequestParameters requestParameters, [NotNull] string itemPath, [NotNull] string templateName);
 
         [NotNull]

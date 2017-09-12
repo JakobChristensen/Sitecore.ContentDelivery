@@ -309,7 +309,7 @@ namespace Sitecore.ContentDelivery.Controllers
         {
             // ReSharper disable once AssignNullToNotNullAttribute
             database = null;
-            requestParameters = new RequestParameters(Request);
+            requestParameters = RequestParameters.Empty;
 
             actionResult = AuthenticateUser();
             if (actionResult != null)
@@ -325,6 +325,8 @@ namespace Sitecore.ContentDelivery.Controllers
             }
 
             database = db;
+
+            requestParameters = new RequestParameters(database.RequestParameters, Request);
         }
     }
 }

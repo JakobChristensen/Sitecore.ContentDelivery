@@ -1,4 +1,4 @@
-﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+﻿// © 2015-2017 by Jakob Christensen. All rights reserved.
 
 using System;
 using System.Collections.Generic;
@@ -16,11 +16,15 @@ namespace Sitecore.ContentDelivery.Web
             ','
         };
 
+        [NotNull]
+        public static readonly RequestParameters Empty = new RequestParameters();
+
         private static readonly HashSet<string> Reserved = new HashSet<string>
         {
             "skip",
             "take",
             "fields",
+            "flatten",
             "systemfields",
             "emptyfields",
             "username",
@@ -32,21 +36,26 @@ namespace Sitecore.ContentDelivery.Web
             "ver"
         };
 
-        public RequestParameters([NotNull] HttpRequestBase request)
+        private RequestParameters()
         {
-            var parameters = new Dictionary<string, string>();
+        }
+
+        public RequestParameters([NotNull] IDictionary<string, string> parameters, [NotNull] HttpRequestBase request)
+        {
+            var requestParameters = new Dictionary<string, string>();
 
             foreach (var key in request.Form.AllKeys)
             {
-                parameters[key] = request.Form[key] ?? string.Empty;
+                requestParameters[key] = request.Form[key] ?? string.Empty;
             }
 
             foreach (var key in request.QueryString.AllKeys)
             {
-                parameters[key] = request.QueryString[key] ?? string.Empty;
+                requestParameters[key] = request.QueryString[key] ?? string.Empty;
             }
 
             Parse(parameters);
+            Parse(requestParameters);
         }
 
         public RequestParameters([NotNull] Dictionary<string, string> parameters)
@@ -80,7 +89,9 @@ namespace Sitecore.ContentDelivery.Web
 
         public int Version { get; private set; }
 
-        private void Parse([NotNull] Dictionary<string, string> parameters)
+        public int Flatten { get; set; }
+
+        private void Parse([NotNull] IDictionary<string, string> parameters)
         {
             if (parameters.TryGetValue("skip", out var value))
             {
@@ -111,6 +122,14 @@ namespace Sitecore.ContentDelivery.Web
                 if (bool.TryParse(value, out var fieldInfo))
                 {
                     IncludeFieldInfo = fieldInfo;
+                }
+            }
+
+            if (parameters.TryGetValue("flatten", out value))
+            {
+                if (int.TryParse(value, out var flatten))
+                {
+                    Flatten = flatten;
                 }
             }
 

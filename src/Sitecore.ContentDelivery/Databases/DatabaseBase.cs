@@ -1,6 +1,7 @@
 ﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
 
 using System.Collections.Generic;
+using System.Web;
 using System.Web.Mvc;
 using Sitecore.ContentDelivery.Web;
 
@@ -9,6 +10,8 @@ namespace Sitecore.ContentDelivery.Databases
     public abstract class DatabaseBase : IDatabase
     {
         public string DatabaseName { get; protected set;  }
+
+        public IDictionary<string, string> RequestParameters { get; } = new Dictionary<string, string>();
 
         public abstract ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName);
 
@@ -29,6 +32,18 @@ namespace Sitecore.ContentDelivery.Databases
         public virtual void Initialize(IDictionary<string, string> parameters, string currentDirectory, string appDataDirectory)
         {
             DatabaseName = parameters.TryGetValue("name", out var databaseName) ? databaseName : string.Empty;
+
+            parameters.TryGetValue("parameters", out var requestParameters);
+            if (string.IsNullOrEmpty(requestParameters))
+            {
+                return;
+            }
+
+            var queryString = HttpUtility.ParseQueryString(requestParameters);
+            foreach (var key in queryString.AllKeys)
+            {
+                RequestParameters[key] = queryString[key];
+            }
         }
 
         public abstract ActionResult SaveItems(RequestParameters requestParameters, Dictionary<string, string> fields);

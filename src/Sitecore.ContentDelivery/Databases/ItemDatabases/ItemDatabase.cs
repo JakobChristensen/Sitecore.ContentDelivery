@@ -144,7 +144,20 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             }
 
             var children = item.Children as IEnumerable<Item>;
-            children = FilterItems(requestParameters, children, out var count);
+
+            children = FilterEnumerable(requestParameters, children);
+
+            var count = children.Count();
+
+            if (requestParameters.Skip > 0)
+            {
+                children = children.Skip(requestParameters.Skip);
+            }
+
+            if (requestParameters.Take > 0)
+            {
+                children = children.Take(requestParameters.Take);
+            }
 
             var output = new JsonContentResultWriter(new StringWriter());
             WriteMetaData(output);
@@ -158,7 +171,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             foreach (var child in children)
             {
                 output.WriteStartObject();
-                WriteItemHeader(output, child);
+                WriteItemHeader(output, child, requestParameters.Flatten == 0);
                 WriteItemFields(output, requestParameters, child);
                 WriteItemChildren(output, requestParameters, child, requestParameters.Children);
                 output.WriteEndObject();
@@ -172,12 +185,6 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         public override ActionResult GetDatabase(RequestParameters requestParameters)
         {
             SetContext(requestParameters);
-
-            var rootItems = string.IsNullOrEmpty(RootItemPath)? new[] { Database.GetRootItem() } : Database.GetItem(RootItemPath).Children.ToArray();
-            if (rootItems == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Root item not found");
-            }
 
             var output = new JsonContentResultWriter(new StringWriter());
             WriteMetaData(output);
@@ -201,10 +208,31 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 
             output.WriteStartArray("roots");
 
+            ICollection<Item> children = new List<Item>();
+            if (string.IsNullOrEmpty(RootItemPath))
+            {
+                children.Add(Database.GetRootItem());
+            }
+            else
+            {
+                var rootItem = Database.GetItem(RootItemPath);
+                if (rootItem == null)
+                {
+                   return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Root Item Path not found");
+                }
+
+                foreach (Item child in rootItem.Children)
+                {
+                    children.Add(child);
+                }
+            }
+
+            var rootItems = FilterEnumerable(requestParameters, children);
+
             foreach (var rootItem in rootItems)
             {
                 output.WriteStartObject();
-                WriteItemHeader(output, rootItem);
+                WriteItemHeader(output, rootItem, requestParameters.Flatten == 0);
                 WriteItemFields(output, requestParameters, rootItem);
                 output.WriteEndObject();
             }
@@ -263,7 +291,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
             using (var context = index.CreateSearchContext())
             {
-                var queryable = FilterSearch(context.GetQueryable<SearchResultItem>(), requestParameters);
+                var queryable = FilterQueryable(context.GetQueryable<SearchResultItem>(), requestParameters);
 
                 result = queryable.Where(i => i.Name != "$name" && i.Name != "__Standard Values").Select(item => item.ItemId).ToList().Distinct().ToList();
 
@@ -376,7 +404,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             var index = ContentSearchManager.GetIndex("sitecore_" + Database.Name.ToLowerInvariant() + "_index");
             using (var context = index.CreateSearchContext())
             {
-                var queryable = FilterSearch(context.GetQueryable<SearchResultItem>(), requestParameters);
+                var queryable = FilterQueryable(context.GetQueryable<SearchResultItem>(), requestParameters);
 
                 result = queryable.Where(t => t.TemplateId == TemplateIDs.Template).Select(item => item.ItemId).ToList().Distinct().ToList();
 
@@ -523,66 +551,82 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         }
 
         [NotNull]
-        protected virtual IEnumerable<Item> FilterItems([NotNull] RequestParameters requestParameters, IEnumerable<Item> items, out int count)
+        protected virtual IEnumerable<Item> FilterEnumerable([NotNull] RequestParameters requestParameters, IEnumerable<Item> items)
         {
+            if (requestParameters.Flatten > 0)
+            {
+                items = Flatten(items, requestParameters.Flatten, 0);
+            }
+
             foreach (var pair in requestParameters.Parameters)
             {
                 var fieldName = pair.Key;
                 var value = pair.Value;
+                var op = string.Empty;
 
-                if (!fieldName.EndsWith("]"))
+                if (fieldName.EndsWith("]", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    items = items.Where(i => i[fieldName] == value);
-                    continue;
-                }
+                    var n = fieldName.LastIndexOf('[');
+                    if (n < 0)
+                    {
+                        throw new SyntaxErrorException("[ expected");
+                    }
 
-                var n = fieldName.LastIndexOf('[');
-                if (n < 0)
-                {
-                    throw new SyntaxErrorException("[ expected");
+                    op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
+                    fieldName = fieldName.Left(n).Trim();
                 }
-
-                var op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
-                fieldName = fieldName.Left(n).Trim();
 
                 switch (op)
                 {
                     case "not":
-                        items = items.Where(i => i[fieldName] != value);
+                        items = items.Where(i => GetFieldValue(i, fieldName) != value);
                         break;
-
                     case "in":
                         var l1 = value.Split('|');
-                        items = items.Where(i => l1.Contains(i[fieldName]));
+                        items = items.Where(i => l1.Contains(GetFieldValue(i, fieldName)));
                         break;
-
                     case "not in":
                         var l2 = value.Split('|');
-                        items = items.Where(i => !l2.Contains(i[fieldName]));
+                        items = items.Where(i => !l2.Contains(GetFieldValue(i, fieldName)));
                         break;
-
                     case "has":
-                        items = items.Where(t => !string.IsNullOrEmpty(t[fieldName]));
+                        items = items.Where(i => !string.IsNullOrEmpty(GetFieldValue(i, fieldName)));
+                        break;
+                    default:
+                        items = items.Where(i => GetFieldValue(i, fieldName) == value);
                         break;
                 }
             }
 
-            count = items.Count();
-
-            if (requestParameters.Skip > 0)
+            if (requestParameters.Flatten > 0)
             {
-                items = items.Skip(requestParameters.Skip);
-            }
-
-            if (requestParameters.Take > 0)
-            {
-                items = items.Take(requestParameters.Take);
+                items = items.OrderBy(i => i.DisplayName);
             }
 
             return items;
+
+            string GetFieldValue(Item item, string fieldName)
+            {
+                switch (fieldName.ToLowerInvariant())
+                {
+                    case "id":
+                        return item.ID.ToString();
+                    case "name":
+                        return item.Name;
+                    case "path":
+                        return item.Paths.Path;
+                    case "templateid":
+                        return item.TemplateID.ToString();
+                    case "templatename":
+                        return item.TemplateName;
+                    default:
+                        return item[fieldName];
+                }
+            }
         }
 
-        protected virtual IQueryable<SearchResultItem> FilterSearch(IQueryable<SearchResultItem> queryable, [NotNull] RequestParameters requestParameters)
+        [NotNull]
+        protected virtual IQueryable<SearchResultItem> FilterQueryable(IQueryable<SearchResultItem> queryable, [NotNull] RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Path))
             {
@@ -597,6 +641,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             {
                 var fieldName = pair.Key;
                 var value = pair.Value;
+                var op = string.Empty;
 
                 if (fieldName == "query")
                 {
@@ -604,80 +649,42 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                     continue;
                 }
 
-                if (!fieldName.EndsWith("]"))
+                if (fieldName.EndsWith("]", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    switch (fieldName.ToLowerInvariant())
+                    var n = fieldName.LastIndexOf('[');
+                    if (n < 0)
                     {
-                        case "id":
-                            if (!System.Guid.TryParse(value, out var itemGuid))
-                            {
-                                throw new System.InvalidOperationException("Not a valid guid");
-                            }
-
-                            var itemId = new ID(itemGuid);
-                            queryable = queryable.Where(item => item.TemplateId == itemId);
-                            continue;
-
-                        case "name":
-                            queryable = queryable.Where(item => item.Name == value);
-                            continue;
-
-                        case "path":
-                            queryable = queryable.Where(item => item.Path == value);
-                            continue;
-
-                        case "templateid":
-                            if (!System.Guid.TryParse(value, out var templateGuid))
-                            {
-                                throw new System.InvalidOperationException("Not a valid guid");
-                            }
-
-                            var templateId = new ID(templateGuid);
-                            queryable = queryable.Where(item => item.TemplateId == templateId);
-                            continue;
-
-                        case "templatename":
-                            queryable = queryable.Where(item => item.TemplateName == value);
-                            continue;
-
-                        default:
-                            queryable = queryable.Where(item => item[fieldName] == value);
-                            continue;
+                        throw new SyntaxErrorException("[ expected");
                     }
+
+                    op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
+                    fieldName = fieldName.Left(n).Trim();
                 }
 
-                var n = fieldName.LastIndexOf('[');
-                if (n < 0)
-                {
-                    throw new SyntaxErrorException("[ expected");
-                }
-
-                var op = fieldName.Mid(n + 1, fieldName.Length - n - 2);
-                fieldName = fieldName.Left(n).Trim();
-
-                switch (op)
-                {
-                    case "not":
-                        queryable = queryable.Where(item => item[fieldName] != value);
-                        break;
-
-                    case "in":
-                        var l1 = value.Split('|');
-                        queryable = queryable.Where(item => l1.Contains(item[fieldName]));
-                        break;
-
-                    case "not in":
-                        var l2 = value.Split('|');
-                        queryable = queryable.Where(item => !l2.Contains(item[fieldName]));
-                        break;
-
-                    case "has":
-                        queryable = queryable.Where(item => !string.IsNullOrEmpty(item[fieldName]));
-                        break;
-                }
+                queryable = FilterQueryableFieldValue(queryable, fieldName, op, value);
             }
 
+            queryable = queryable.OrderBy(i => i.Name);
+
             return queryable;
+        }
+
+        protected virtual IEnumerable<Item> Flatten([NotNull] IEnumerable<Item> items, int maxLevel, int level)
+        {
+            foreach (var item in items)
+            {
+                yield return item;
+
+                if (level + 1 >= maxLevel)
+                {
+                    continue;
+                }
+
+                foreach (var child in Flatten(item.Children, maxLevel, level + 1))
+                {
+                    yield return child;
+                }
+            }
         }
 
         [NotNull]
@@ -842,7 +849,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             }
         }
 
-        protected virtual void WriteItemHeader([NotNull] JsonTextWriter output, [NotNull] Item item)
+        protected virtual void WriteItemHeader([NotNull] JsonTextWriter output, [NotNull] Item item, bool isExpandable = true)
         {
             output.WritePropertyString("id", item.ID.ToString());
             output.WritePropertyString("uri", item.Database.Name + "/" + item.ID + "/" + item.Language.Name + "/" + item.Version.Number);
@@ -854,7 +861,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             output.WritePropertyString("path", item.Paths.Path);
             output.WritePropertyString("templateId", item.TemplateID.ToString());
             output.WritePropertyString("templateName", item.TemplateName);
-            output.WritePropertyString("childCount", item.Children.Count);
+            output.WritePropertyString("childCount", isExpandable ? item.Children.Count : 0);
 
             if (item.Paths.IsMediaItem)
             {
@@ -870,6 +877,114 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             output.WritePropertyString("language", Context.Language.Name);
             output.WritePropertyString("host", WebUtil.GetServerUrl());
             output.WriteEndObject();
+        }
+
+        [NotNull]
+        private IQueryable<SearchResultItem> FilterQueryableFieldValue([NotNull] IQueryable<SearchResultItem> queryable, [NotNull] string fieldName, [NotNull] string op, [NotNull] string value)
+        {
+            switch (fieldName.ToLowerInvariant())
+            {
+                case "id":
+                    switch (op)
+                    {
+                        case "not":
+                            var itemId = ID.Parse(value);
+                            return queryable.Where(item => item.ItemId != itemId);
+                        case "in":
+                            var l1 = value.Split('|');
+                            return queryable.Where(item => l1.Contains(item.ItemId.ToString()));
+                        case "not in":
+                            var l2 = value.Split('|');
+                            return queryable.Where(item => !l2.Contains(item.ItemId.ToString()));
+                        case "has":
+                            return queryable;
+                        default:
+                            var itemId2 = ID.Parse(value);
+                            return queryable.Where(item => item.ItemId == itemId2);
+                    }
+                case "name":
+                    switch (op)
+                    {
+                        case "not":
+                            return queryable.Where(item => item.Name != value);
+                        case "in":
+                            var l1 = value.Split('|');
+                            return queryable.Where(item => l1.Contains(item.Name));
+                        case "not in":
+                            var l2 = value.Split('|');
+                            return queryable.Where(item => !l2.Contains(item.Name));
+                        case "has":
+                            return queryable;
+                        default:
+                            return queryable.Where(item => item.Name == value);
+                    }
+                case "path":
+                    switch (op)
+                    {
+                        case "not":
+                            return queryable.Where(item => item.Path != value);
+                        case "in":
+                            var l1 = value.Split('|');
+                            return queryable.Where(item => l1.Contains(item.Path));
+                        case "not in":
+                            var l2 = value.Split('|');
+                            return queryable.Where(item => !l2.Contains(item.Path));
+                        case "has":
+                            return queryable;
+                        default:
+                            return queryable.Where(item => item.Path == value);
+                    }
+                case "templateid":
+                    switch (op)
+                    {
+                        case "not":
+                            var templateId = ID.Parse(value);
+                            return queryable.Where(item => item.TemplateId != templateId);
+                        case "in":
+                            var l1 = value.Split('|');
+                            return queryable.Where(item => l1.Contains(item.TemplateId.ToString()));
+                        case "not in":
+                            var l2 = value.Split('|');
+                            return queryable.Where(item => !l2.Contains(item.TemplateId.ToString()));
+                        case "has":
+                            return queryable;
+                        default:
+                            var templateId2 = ID.Parse(value);
+                            return queryable.Where(item => item.TemplateId == templateId2);
+                    }
+                case "templatename":
+                    switch (op)
+                    {
+                        case "not":
+                            return queryable.Where(item => item.TemplateName != value);
+                        case "in":
+                            var l1 = value.Split('|');
+                            return queryable.Where(item => l1.Contains(item.TemplateName));
+                        case "not in":
+                            var l2 = value.Split('|');
+                            return queryable.Where(item => !l2.Contains(item.TemplateName));
+                        case "has":
+                            return queryable;
+                        default:
+                            return queryable.Where(item => item.TemplateName == value);
+                    }
+                default:
+                    switch (op)
+                    {
+                        case "not":
+                            return queryable.Where(item => item[fieldName] != value);
+                        case "in":
+                            var l1 = value.Split('|');
+                            return queryable.Where(item => l1.Contains(item[fieldName]));
+                        case "not in":
+                            var l2 = value.Split('|');
+                            return queryable.Where(item => !l2.Contains(item[fieldName]));
+                        case "has":
+                            return queryable.Where(item => !string.IsNullOrEmpty(item[fieldName]));
+                        default:
+                            return queryable.Where(item => item[fieldName] == value);
+                    }
+            }
         }
 
         private class FieldEditorField
