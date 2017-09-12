@@ -35,6 +35,8 @@ namespace Sitecore.ContentDelivery.Databases
         [NotNull]
         ActionResult GetTemplates([NotNull] RequestParameters requestParameters);
 
+        void Initialize([NotNull] IDictionary<string, string> parameters, [NotNull] string currentDirectory, [NotNull] string appDataDirectory);
+
         [NotNull]
         ActionResult SaveItems([NotNull] RequestParameters requestParameters, [NotNull] Dictionary<string, string> fields);
     }

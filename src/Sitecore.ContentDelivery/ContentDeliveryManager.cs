@@ -24,14 +24,14 @@ namespace Sitecore.ContentDelivery
             return database;
         }
 
-        public static void RegisterFieldValueFormatter([NotNull] FieldValueFormatter fieldValueFormatter)
+        public static void RegisterFieldValueFormatter([NotNull] SitecoreFieldValueFormatter sitecoreFieldValueFormatter)
         {
-            FieldValueFormatters.Add(fieldValueFormatter);
+            FieldValueFormatters.Add(sitecoreFieldValueFormatter);
         }
 
-        public static void UnregisterFieldValueFormatter([NotNull] FieldValueFormatter fieldValueFormatter)
+        public static void UnregisterFieldValueFormatter([NotNull] SitecoreFieldValueFormatter sitecoreFieldValueFormatter)
         {
-            FieldValueFormatters.Remove(fieldValueFormatter);
+            FieldValueFormatters.Remove(sitecoreFieldValueFormatter);
         }
 
         [NotNull]

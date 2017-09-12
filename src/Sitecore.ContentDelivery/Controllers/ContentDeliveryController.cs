@@ -3,18 +3,22 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
+using System.Web.Security;
 using Newtonsoft.Json.Linq;
 using Sitecore.ContentDelivery.Databases;
 using Sitecore.ContentDelivery.Extensions;
 using Sitecore.ContentDelivery.Web;
+using Sitecore.SecurityModel.License;
+using Sitecore.Web;
 
 namespace Sitecore.ContentDelivery.Controllers
 {
-    public class ContentDeliveryController : ContentDeliveryControllerBase
+    public class ContentDeliveryController : Controller
     {
         [NotNull]
         public virtual ActionResult AddItem(string databaseName, string itemPath, string template)
@@ -34,7 +38,7 @@ namespace Sitecore.ContentDelivery.Controllers
         }
 
         [NotNull]
-        public virtual ActionResult DeleteItems(string databaseName, string itemName)
+        public virtual ActionResult DeleteItems(string databaseName, string itemUri)
         {
             PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
             if (actionResult != null)
@@ -42,8 +46,9 @@ namespace Sitecore.ContentDelivery.Controllers
                 return actionResult;
             }
 
-            var items = GetItemPaths(itemName);
-            return database.DeleteItems(requestParameters, items);
+            var itemUris = GetItemUris(itemUri);
+
+            return database.DeleteItems(requestParameters, itemUris);
         }
 
         [NotNull]
@@ -67,7 +72,7 @@ namespace Sitecore.ContentDelivery.Controllers
             return database.GetItem(requestParameters, "{11111111-1111-1111-1111-111111111111}");
         }
 
-        [NotNull]
+        [NotNull, HttpPost]
         public virtual ActionResult GetBundle()
         {
             var authenticationResult = AuthenticateUser();
@@ -192,20 +197,7 @@ namespace Sitecore.ContentDelivery.Controllers
             {
                 if (key != null)
                 {
-                    var fieldUri = key;
-
-                    // trim off "http://website/"
-                    var n = fieldUri.IndexOf("://", StringComparison.Ordinal);
-                    if (n >= 0)
-                    {
-                        n = fieldUri.IndexOf('/', n + 3);
-                        if (n >= 0)
-                        {
-                            fieldUri = fieldUri.Mid(n + 1);
-                        }
-                    }
-
-                    fields[fieldUri] = Request.Form[key];
+                    fields[key] = Request.Form[key];
                 }
             }
 
@@ -214,20 +206,30 @@ namespace Sitecore.ContentDelivery.Controllers
         }
 
         [NotNull]
-        protected virtual IEnumerable<string> GetItemPaths([NotNull] string itemName)
+        protected virtual IEnumerable<string> GetItemUris([NotNull] string itemUri)
         {
-            var items = new List<string>();
-            if (!string.IsNullOrEmpty(itemName))
+            var itemUris = new List<string>();
+
+            if (!string.IsNullOrEmpty(itemUri))
             {
-                items.Add(itemName);
+                itemUris.Add(itemUri);
+            }
+
+            var queryString = WebUtil.GetQueryString("itemuris");
+            if (!string.IsNullOrEmpty(queryString))
+            {
+                itemUris.AddRange(queryString.Split(','));
             }
 
             foreach (var key in Request.Form.AllKeys)
             {
-                items.Add(Request.Form[key]);
+                if (key.StartsWith("itemuri", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    itemUris.Add(Request.Form[key]);
+                }
             }
 
-            return items;
+            return itemUris;
         }
 
         protected virtual void PreprocessRequest(string databaseName, [CanBeNull] out ActionResult actionResult, [NotNull] out RequestParameters requestParameters, [NotNull] out IDatabase database)
@@ -251,5 +253,56 @@ namespace Sitecore.ContentDelivery.Controllers
 
             database = db;
         }
+
+        [CanBeNull]
+        protected virtual ActionResult AuthenticateUser()
+        {
+            if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName.IndexOf("Sitecore.Kernel", StringComparison.Ordinal) >= 0))
+            {
+                return null;
+            }
+
+            return AuthenticateUsingSitecore();
+        }
+
+        [CanBeNull]
+        protected ActionResult AuthenticateUsingSitecore()
+        {
+            // todo: provider better security
+
+            var userName = WebUtil.GetQueryString("username") ?? string.Empty;
+            var password = WebUtil.GetQueryString("password") ?? string.Empty;
+
+            if (string.IsNullOrEmpty(userName) && string.IsNullOrEmpty(password))
+            {
+                return null;
+            }
+
+            if (Context.IsLoggedIn)
+            {
+                if (string.Equals(Context.User.Name, userName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+
+                Context.Logout();
+            }
+
+            if (!LicenseManager.HasRuntime)
+            {
+                return new HttpUnauthorizedResult("A required license is missing");
+            }
+
+            var validated = Membership.ValidateUser(userName, password);
+            if (!validated)
+            {
+                return new HttpUnauthorizedResult("Unknown username or password");
+            }
+
+            Security.Authentication.AuthenticationManager.Login(userName, password, true);
+
+            return null;
+        }
+
     }
 }

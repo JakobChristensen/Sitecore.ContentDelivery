@@ -13,26 +13,19 @@ using Sitecore.ContentDelivery.Web;
 
 namespace Sitecore.ContentDelivery.Databases.FileDatabases
 {
-    public abstract class FileDatabase : IDatabase
+    public abstract class FileDatabase : DatabaseBase
     {
-        protected FileDatabase(string fileName)
-        {
-            FileName = fileName;
-            DatabaseName = Path.GetFileNameWithoutExtension(fileName) ?? string.Empty;
-        }
-
-        public string DatabaseName { get; }
-
-        public string FileName { get; set; }
+        [NotNull]
+        public string FileName { get; protected set; }
 
         [NotNull]
         public ICollection<FileDatabaseItem> Items { get; } = new List<FileDatabaseItem>();
 
-        public ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
+        public override ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
 
-        public ActionResult DeleteItems(RequestParameters requestParameters, IEnumerable<string> items) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
+        public override ActionResult DeleteItems(RequestParameters requestParameters, IEnumerable<string> items) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
 
-        public virtual ActionResult GetChildren(RequestParameters requestParameters, string itemName)
+        public override ActionResult GetChildren(RequestParameters requestParameters, string itemName)
         {
             var items = GetItemsByName(itemName);
             if (!items.Any())
@@ -131,7 +124,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetDatabase(RequestParameters requestParameters)
+        public override ActionResult GetDatabase(RequestParameters requestParameters)
         {
             var rootItem = Items.FirstOrDefault(i => i.Parent == null);
             if (rootItem == null)
@@ -167,7 +160,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetItem(RequestParameters requestParameters, string itemName)
+        public override ActionResult GetItem(RequestParameters requestParameters, string itemName)
         {
             var items = GetItemsByName(itemName).ToList();
             if (!items.Any())
@@ -196,7 +189,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetItems([NotNull] RequestParameters requestParameters)
+        public override ActionResult GetItems(RequestParameters requestParameters)
         {
             var result = Filter(Items.AsQueryable(), requestParameters).Where(i => i.Name != "$name" && i.Name != "__Standard Values").ToList();
             var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDatabaseItem>;
@@ -236,7 +229,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetTemplate(RequestParameters requestParameters, string templateName)
+        public override ActionResult GetTemplate(RequestParameters requestParameters, string templateName)
         {
             var templates = GetTemplatesByName(templateName).ToList();
             if (!templates.Any())
@@ -294,7 +287,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult GetTemplates([NotNull] RequestParameters requestParameters)
+        public override ActionResult GetTemplates(RequestParameters requestParameters)
         {
             var result = Filter(Items.AsQueryable(), requestParameters).Where(t => t.TemplateId == TemplateIDs.Template.Guid).Distinct().ToList();
             var items = result.OrderBy(t => t.Name).ThenBy(i => i.Path) as IEnumerable<FileDatabaseItem>;
@@ -332,7 +325,14 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
-        public virtual ActionResult SaveItems(RequestParameters requestParameters, Dictionary<string, string> fields) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
+        public override void Initialize(IDictionary<string, string> parameters, string currentDirectory, string appDataDirectory)
+        {
+            base.Initialize(parameters, currentDirectory, appDataDirectory);
+
+            FileName = parameters.TryGetValue("file", out var fileName) ? fileName : string.Empty;
+        }
+
+        public override ActionResult SaveItems(RequestParameters requestParameters, Dictionary<string, string> fields) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
 
         [NotNull]
         protected virtual IQueryable<FileDatabaseItem> Filter([NotNull] IQueryable<FileDatabaseItem> queryable, [NotNull] RequestParameters requestParameters)
@@ -509,6 +509,18 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
                 }
 
                 var value = field.Value;
+
+                var fieldInfo = request.Fields.FirstOrDefault(f => string.Equals(f.FieldName, field.Name, StringComparison.OrdinalIgnoreCase)) ?? new FieldInfo(field.Name, string.Empty);
+                foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
+                {
+                    if (!formatter.TryFormat(field, fieldInfo, value, out var formattedValue))
+                    {
+                        continue;
+                    }
+
+                    value = formattedValue;
+                    break;
+                }
 
                 if (!request.IncludeEmptyFields && string.IsNullOrEmpty(value))
                 {

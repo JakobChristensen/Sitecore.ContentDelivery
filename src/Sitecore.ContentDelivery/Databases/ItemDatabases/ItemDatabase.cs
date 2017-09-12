@@ -16,6 +16,7 @@ using Sitecore.ContentSearch.SearchTypes;
 using Sitecore.Data;
 using Sitecore.Data.Items;
 using Sitecore.Data.Managers;
+using Sitecore.Diagnostics;
 using Sitecore.Globalization;
 using Sitecore.Resources;
 using Sitecore.Resources.Media;
@@ -26,13 +27,8 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 {
     public class ItemDatabase : DatabaseBase
     {
-        public ItemDatabase([NotNull] string databaseName) : base(databaseName)
-        {
-            Database = Factory.GetDatabase(databaseName);
-        }
-
         [NotNull]
-        public Database Database { get; }
+        public Database Database { get; protected set; }
 
         public override ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName)
         {
@@ -411,6 +407,21 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             return output.ToContentResult();
         }
 
+        public override void Initialize(IDictionary<string, string> parameters, string currentDirectory, string appDataDirectory)
+        {
+            base.Initialize(parameters, currentDirectory, appDataDirectory);
+
+            parameters.TryGetValue("database", out var databaseName);
+
+            if (string.IsNullOrEmpty(databaseName))
+            {
+                Log.Error("Missing 'database' attribute", GetType());
+                return;
+            }
+
+            Database = Factory.GetDatabase(databaseName);
+        }
+
         public override ActionResult SaveItems(RequestParameters requestParameters, Dictionary<string, string> fields)
         {
             var output = new JsonContentResultWriter(new StringWriter());
@@ -775,20 +786,16 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 
                 var value = field.Value;
 
-                if (!includeAllFields)
+                var fieldInfo = request.Fields.FirstOrDefault(f => string.Equals(f.FieldName, field.Name, System.StringComparison.OrdinalIgnoreCase)) ?? new FieldInfo(field.Name, string.Empty);
+                foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
                 {
-                    var fieldDescriptor = request.Fields.First(f => string.Equals(f.FieldName, field.Name, System.StringComparison.OrdinalIgnoreCase));
-
-                    foreach (var formatter in ContentDeliveryManager.FieldValueFormatters.OrderBy(f => f.Priority))
+                    if (!formatter.TryFormat(field, fieldInfo, value, out var formattedValue))
                     {
-                        if (!formatter.TryFormat(field, fieldDescriptor, value, out var formattedValue))
-                        {
-                            continue;
-                        }
-
-                        value = formattedValue;
-                        break;
+                        continue;
                     }
+
+                    value = formattedValue;
+                    break;
                 }
 
                 if (!request.IncludeEmptyFields && string.IsNullOrEmpty(value))

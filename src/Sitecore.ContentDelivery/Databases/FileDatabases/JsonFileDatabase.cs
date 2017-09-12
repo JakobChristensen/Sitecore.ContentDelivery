@@ -1,27 +1,38 @@
 ﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Web.Mvc;
 using Newtonsoft.Json.Linq;
 using Sitecore.ContentDelivery.Extensions;
-using Sitecore.ContentDelivery.Web;
 
 namespace Sitecore.ContentDelivery.Databases.FileDatabases
 {
     public class JsonFileDatabase : FileDatabase
     {
-        public JsonFileDatabase(string fileName) : base(fileName)
+        public override void Initialize(IDictionary<string, string> parameters, string currentDirectory, string appDataDirectory)
         {
-            var content = File.ReadAllText(FileName);
+            base.Initialize(parameters, currentDirectory, appDataDirectory);
+
+            var fileName = FileName.Replace('/', '\\');
+            if (fileName.IndexOf('\\') < 0)
+            {
+                fileName = Path.Combine(appDataDirectory, fileName);
+            }
+            else
+            {
+                fileName = Path.Combine(currentDirectory, fileName);
+            }
+
+            var content = File.ReadAllText(fileName);
 
             var root = JObject.Parse(content);
 
             ReadItem(root, null);
         }
 
-        protected void ReadItem(JObject jobject, [CanBeNull] FileDatabaseItem parent)
+        protected void ReadItem([NotNull] JObject jobject, [CanBeNull] FileDatabaseItem parent)
         {
             var itemName = jobject.GetPropertyValue("name");
             var itemDisplayName = jobject.GetPropertyValue("displayName");
@@ -32,22 +43,19 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             var mediaUrl = jobject.GetPropertyValue("mediaUrl");
 
             var itemIdString = jobject.GetPropertyValue("id");
-            Guid itemId;
-            if (!Guid.TryParse(itemIdString, out itemId))
+            if (!Guid.TryParse(itemIdString, out var itemId))
             {
                 throw new InvalidOperationException("id is not a valid Guid");
             }
 
             var templateIdString = jobject.GetPropertyValue("templateId");
-            Guid templateId;
-            if (!Guid.TryParse(templateIdString, out templateId))
+            if (!Guid.TryParse(templateIdString, out var templateId))
             {
                 throw new InvalidOperationException("templateId is not a valid Guid");
             }
 
             var childCountString = jobject.GetPropertyValue("childCount");
-            int childCount;
-            if (!int.TryParse(childCountString, out childCount))
+            if (!int.TryParse(childCountString, out var childCount))
             {
                 throw new InvalidOperationException("childCount is not a valid integer");
             }

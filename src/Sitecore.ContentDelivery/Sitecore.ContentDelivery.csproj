@@ -119,11 +119,10 @@
     <Compile Include="Constants.cs" />
     <Compile Include="ContentDeliveryConfig.cs" />
     <Compile Include="Controllers\ContentDeliveryController.cs" />
-    <Compile Include="Controllers\ContentDeliveryControllerBase.cs" />
     <Compile Include="Databases\FieldInfo.cs" />
     <Compile Include="Databases\FileDatabases\FileDatabase.cs" />
     <Compile Include="Databases\FileDatabases\JsonFileDatabase.cs" />
-    <Compile Include="Databases\Formatters\FieldValueFormatter.cs" />
+    <Compile Include="Databases\Formatters\SitecoreFieldValueFormatter.cs" />
     <Compile Include="Databases\Formatters\IFieldValueFormatter.cs" />
     <Compile Include="Databases\FileDatabases\FileDatabaseField.cs" />
     <Compile Include="Databases\FileDatabases\FileDatabaseItem.cs" />
@@ -139,7 +138,6 @@
     <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\JsonTextWriterExtensions.cs" />
     <Compile Include="Pipelines\Loader\MapRoutes.cs" />
-    <Compile Include="Pipelines\Loader\RegisterDatabases.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

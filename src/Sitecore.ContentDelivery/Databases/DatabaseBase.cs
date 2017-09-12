@@ -8,12 +8,7 @@ namespace Sitecore.ContentDelivery.Databases
 {
     public abstract class DatabaseBase : IDatabase
     {
-        protected DatabaseBase([NotNull] string databaseName)
-        {
-            DatabaseName = databaseName;
-        }
-
-        public string DatabaseName { get; }
+        public string DatabaseName { get; protected set;  }
 
         public abstract ActionResult AddItem(RequestParameters requestParameters, string itemPath, string templateName);
 
@@ -30,6 +25,11 @@ namespace Sitecore.ContentDelivery.Databases
         public abstract ActionResult GetItem(RequestParameters requestParameters, string itemName);
 
         public abstract ActionResult GetTemplates(RequestParameters requestParameters);
+
+        public virtual void Initialize(IDictionary<string, string> parameters, string currentDirectory, string appDataDirectory)
+        {
+            DatabaseName = parameters.TryGetValue("name", out var databaseName) ? databaseName : string.Empty;
+        }
 
         public abstract ActionResult SaveItems(RequestParameters requestParameters, Dictionary<string, string> fields);
     }

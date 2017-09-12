@@ -1,52 +1,28 @@
 ﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
 
-using System.IO;
-using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
-using Sitecore.ContentDelivery.Databases.FileDatabases;
 
 namespace Sitecore.ContentDelivery
 {
     public static class ContentDeliveryConfig
     {
-        public static void MountDatabases()
+        public static void RegisterRoutes([NotNull] string basePath)
         {
-            var directory = HttpContext.Current.Server.MapPath(Constants.AppDataDatabasesDirectory);
-            if (!Directory.Exists(directory))
-            {
-                return;
-            }
-
-            foreach (var fileName in Directory.GetFiles(directory))
-            {
-                var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
-
-                switch (extension)
-                {
-                    case ".json":
-                        ContentDeliveryManager.MountDatabase(new JsonFileDatabase(fileName));
-                        break;
-                }
-            }
-        }
-
-        public static void RegisterRoutes()
-        {
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetBundle", "sitecore/get", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetBundle", basePath + "/get", new
             {
                 controller = "ContentDelivery",
                 action = "GetBundle"
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDatabase", "sitecore/get/{databaseName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetDatabase", basePath + "/get/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetDatabase",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetChildren", "sitecore/get/children/{databaseName}/{*itemName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetChildren", basePath + "/get/children/{databaseName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetChildren",
@@ -54,14 +30,14 @@ namespace Sitecore.ContentDelivery
                 itemName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItems", "sitecore/get/items/{databaseName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetItems", basePath + "/get/items/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItems",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", "sitecore/get/template/{databaseName}/{*templateName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetTemplate", basePath + "/get/template/{databaseName}/{*templateName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplate",
@@ -69,21 +45,21 @@ namespace Sitecore.ContentDelivery
                 templateName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplates", "sitecore/get/templates/{databaseName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetTemplates", basePath + "/get/templates/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplates",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DumpDatabase", "sitecore/get/dump/{databaseName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.DumpDatabase", basePath + "/get/dump/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "DumpDatabase",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", "sitecore/get/item/{databaseName}/{*itemName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetItem", basePath + "/get/item/{databaseName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItem",
@@ -91,23 +67,23 @@ namespace Sitecore.ContentDelivery
                 itemName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.PutItems", "sitecore/put/items/{databaseName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.PutItems", basePath + "/put/items/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "SaveItems",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DeleteItems", "sitecore/delete/items/{databaseName}/{*itemName}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.DeleteItems", basePath + "/delete/items/{databaseName}/{*itemUri}", new
             {
                 controller = "ContentDelivery",
                 action = "DeleteItems",
                 databaseName = "",
-                itemName = ""
+                itemUri = ""
 
             });
 
-            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.AddItems", "sitecore/put/item/{databaseName}/{*itemPath}", new
+            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.AddItems", basePath + "/put/item/{databaseName}/{*itemPath}", new
             {
                 controller = "ContentDelivery",
                 action = "AddItem",

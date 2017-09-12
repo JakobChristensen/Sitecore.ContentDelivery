@@ -4,5 +4,7 @@ namespace Sitecore.ContentDelivery
     public static class Constants
     {
         public const string AppDataDatabasesDirectory = "/App_Data/Sitecore.ContentDelivery/Databases";
+
+        public const string BasePath = "ContentDelivery.BasePath";
     }
 }

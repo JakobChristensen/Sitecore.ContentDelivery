@@ -8,6 +8,6 @@ namespace Sitecore.ContentDelivery.Databases.Formatters
     {
         double Priority { get; }
 
-        bool TryFormat([NotNull] Field field, [NotNull] FieldInfo fieldInfo, [NotNull] string value, [NotNull] out string formattedValue);
+        bool TryFormat([NotNull] object field, [NotNull] FieldInfo fieldInfo, [NotNull] string value, [NotNull] out string formattedValue);
     }
 }

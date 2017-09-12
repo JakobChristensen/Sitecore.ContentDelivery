@@ -26,7 +26,6 @@ namespace Sitecore.ContentDelivery.Web
             "username",
             "password",
             "domain",
-            "token",
             "path",
             "children",
             "lang",

@@ -8,11 +8,11 @@ using Sitecore.Web.UI;
 
 namespace Sitecore.ContentDelivery.Databases.Formatters
 {
-    public class FieldValueFormatter : IFieldValueFormatter
+    public class SitecoreFieldValueFormatter : IFieldValueFormatter
     {
         public double Priority { get; } = 1000;
 
-        public bool TryFormat(Field field, FieldInfo fieldInfo, string value, out string formattedValue)
+        public bool TryFormat(object field, FieldInfo fieldInfo, string value, out string formattedValue)
         {
             formattedValue = string.Empty;
 
@@ -34,7 +34,7 @@ namespace Sitecore.ContentDelivery.Databases.Formatters
                     formattedValue = WebUtil.GetFullUrl(value);
                     return true;
                 case "img":
-                    var imageField = new ImageField(field);
+                    var imageField = new ImageField((Field)field);
                     var url = MediaManager.GetMediaUrl(imageField.MediaItem);
                     formattedValue = WebUtil.GetFullUrl(url);
                     return true;
