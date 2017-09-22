@@ -1,0 +1,28 @@
+{
+    "name": "sitecore-contentdelivery",
+    "version": "1.0.0",
+    "description": "Content Delivery web service for Sitecore",
+    "main": "index.js",
+    "scripts": {
+        "start": "scc.cmd build",
+        "scc": "scc.cmd"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/JakobChristensen/Sitecore.ContentDelivery.git"
+    },
+    "keywords": [
+        "Sitecore",
+        "web",
+        "service"
+    ],
+    "author": "Jakob Christensen",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/JakobChristensen/Sitecore.ContentDelivery/issues"
+    },
+    "homepage": "https://github.com/JakobChristensen/Sitecore.ContentDelivery#readme",
+    "devDependencies": {
+        "sitecore-pathfinder": "^0.10.0-v1"
+    }
+}

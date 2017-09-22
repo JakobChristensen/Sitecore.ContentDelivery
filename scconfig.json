@@ -1,0 +1,33 @@
+{
+    "author": "Jakob Christensen",
+    "description": "Content Delivery web service for Sitecore",
+    "license": "",
+    "name": "Sitecore Content Delivery",
+    "publisher": "Jakob Christensen",
+    "version": "1.0.0",
+
+    "files": {
+        "include": [
+            "src/Sitecore.ContentDelivery/bin/Sitecore.ContentDelivery.dll",
+            "src/Sitecore.ContentDelivery/App_Config/include/Sitecore.ContentDelivery/Sitecore.ContentDelivery.config"
+        ]
+    },
+    
+    "project-website-mappings": {
+        "project-to-website": {
+            "files": {
+                "project-directory-to-website-directory": "/src/Sitecore.ContentDelivery => /"
+            }
+        }
+    },
+
+    "output": {
+        "package": {
+            "filename": "Sitecore.ContentDelivery.zip"
+        }
+    },
+
+    "tasks": {
+        "build-project": ["clean-output", "publish-project", "show-status"]
+    }
+}

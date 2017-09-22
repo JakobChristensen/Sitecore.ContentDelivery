@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{AC8CB7FD-4C72-4CE0-941F-F55E673E2E60}"
 	ProjectSection(SolutionItems) = preProject
 		nuget.config = nuget.config
+		package.json = package.json
 		README.md = README.md
 	EndProjectSection
 EndProject
