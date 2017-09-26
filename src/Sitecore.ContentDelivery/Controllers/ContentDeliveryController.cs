@@ -192,6 +192,13 @@ namespace Sitecore.ContentDelivery.Controllers
         }
 
         [NotNull]
+        public virtual ActionResult GetInsertOptions(string databaseName, string itemName)
+        {
+            PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);
+            return actionResult ?? database.GetInsertOptions(requestParameters, itemName);
+        }
+
+        [NotNull]
         public virtual ActionResult GetItems(string databaseName)
         {
             PreprocessRequest(databaseName, out var actionResult, out var requestParameters, out var database);

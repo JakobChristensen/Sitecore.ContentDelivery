@@ -42,5 +42,8 @@ namespace Sitecore.ContentDelivery.Databases
 
         [NotNull]
         ActionResult SaveItems([NotNull] RequestParameters requestParameters, [NotNull] Dictionary<string, string> fields);
+
+        [NotNull]
+        ActionResult GetInsertOptions([NotNull] RequestParameters requestParameters, [NotNull] string itemName);
     }
 }

@@ -14,6 +14,7 @@ using Sitecore.ContentDelivery.Web;
 using Sitecore.ContentSearch;
 using Sitecore.ContentSearch.SearchTypes;
 using Sitecore.Data;
+using Sitecore.Data.Fields;
 using Sitecore.Data.Items;
 using Sitecore.Data.Managers;
 using Sitecore.Diagnostics;
@@ -145,39 +146,8 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
 
             var children = item.Children as IEnumerable<Item>;
 
-            children = FilterEnumerable(requestParameters, children);
-
-            var count = children.Count();
-
-            if (requestParameters.Skip > 0)
-            {
-                children = children.Skip(requestParameters.Skip);
-            }
-
-            if (requestParameters.Take > 0)
-            {
-                children = children.Take(requestParameters.Take);
-            }
-
             var output = new JsonContentResultWriter(new StringWriter());
-            WriteMetaData(output);
-
-            output.WritePropertyString("count", count);
-            output.WritePropertyString("skip", requestParameters.Skip);
-            output.WritePropertyString("take", requestParameters.Take);
-
-            output.WriteStartArray("items");
-
-            foreach (var child in children)
-            {
-                output.WriteStartObject();
-                WriteItemHeader(output, child, requestParameters.Flatten == 0);
-                WriteItemFields(output, requestParameters, child);
-                WriteItemChildren(output, requestParameters, child, requestParameters.Children);
-                output.WriteEndObject();
-            }
-
-            output.WriteEndArray();
+            WriteItems(output, requestParameters, children);
 
             return output.ToContentResult();
         }
@@ -218,7 +188,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                 var rootItem = Database.GetItem(RootItemPath);
                 if (rootItem == null)
                 {
-                   return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Root Item Path not found");
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Root Item Path not found");
                 }
 
                 foreach (Item child in rootItem.Children)
@@ -238,6 +208,45 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             }
 
             output.WriteEndArray();
+
+            return output.ToContentResult();
+        }
+
+        public override ActionResult GetInsertOptions(RequestParameters requestParameters, string itemName)
+        {
+            SetContext(requestParameters);
+
+            var items = GetItemsByName(itemName).ToList();
+            if (!items.Any())
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item not found");
+            }
+
+            if (items.Count > 1)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.Ambiguous, "Ambiguous item name");
+            }
+
+            var item = items.First();
+            if (item == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item not found");
+            }
+
+            if (requestParameters.Version != 0)
+            {
+                item = item.Database.GetItem(item.ID, item.Language, Version.Parse(requestParameters.Version));
+                if (item == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Item version not found");
+                }
+            }
+
+            var branches = new MultilistField(item.Fields[FieldIDs.Branches]);
+
+            var output = new JsonContentResultWriter(new StringWriter());
+
+            WriteItems(output, requestParameters, branches.GetItems());
 
             return output.ToContentResult();
         }
@@ -859,6 +868,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             output.WritePropertyString("icon16x16", Images.GetThemedImageSource(item.Appearance.Icon, ImageDimension.id16x16));
             output.WritePropertyString("icon32x32", Images.GetThemedImageSource(item.Appearance.Icon, ImageDimension.id32x32));
             output.WritePropertyString("path", item.Paths.Path);
+            output.WritePropertyString("longPath", item.Paths.LongID);
             output.WritePropertyString("templateId", item.TemplateID.ToString());
             output.WritePropertyString("templateName", item.TemplateName);
             output.WritePropertyString("childCount", isExpandable ? item.Children.Count : 0);
@@ -867,6 +877,42 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             {
                 output.WritePropertyString("mediaurl", WebUtil.GetFullUrl(MediaManager.GetMediaUrl(new MediaItem(item))));
             }
+        }
+
+        protected virtual void WriteItems([NotNull] JsonContentResultWriter output, [NotNull] RequestParameters requestParameters, IEnumerable<Item> items)
+        {
+            items = FilterEnumerable(requestParameters, items);
+
+            var count = items.Count();
+
+            if (requestParameters.Skip > 0)
+            {
+                items = items.Skip(requestParameters.Skip);
+            }
+
+            if (requestParameters.Take > 0)
+            {
+                items = items.Take(requestParameters.Take);
+            }
+
+            WriteMetaData(output);
+
+            output.WritePropertyString("count", count);
+            output.WritePropertyString("skip", requestParameters.Skip);
+            output.WritePropertyString("take", requestParameters.Take);
+
+            output.WriteStartArray("items");
+
+            foreach (var child in items)
+            {
+                output.WriteStartObject();
+                WriteItemHeader(output, child, requestParameters.Flatten == 0);
+                WriteItemFields(output, requestParameters, child);
+                WriteItemChildren(output, requestParameters, child, requestParameters.Children);
+                output.WriteEndObject();
+            }
+
+            output.WriteEndArray();
         }
 
         protected virtual void WriteMetaData([NotNull] JsonTextWriter output)

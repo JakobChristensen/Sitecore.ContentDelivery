@@ -235,6 +235,11 @@ Get all fields:
 /sitecore/get/item/master/sitecore/content/Home?fields=*
 ``` 
 
+Get all fields including those with empty fields:
+``` 
+/sitecore/get/item/master/sitecore/content/Home?fields=*&emptyfields=true
+``` 
+
 Get all fields including system fields:
 ``` 
 /sitecore/get/item/master/sitecore/content/Home?fields=*&systemfields=true
@@ -273,6 +278,14 @@ Get all fields including field info:
   ]
 }
 ``` 
+
+## Field parameter modifiers
+
+* fields=Title, Text - include Title and Text fields
+* fields=* - include all fields
+* emptyfields=true - include fields with no value
+* systemfields=true - include system fields (starting with __)
+* fieldinfo=true - include field information
 
 ## Formatters
 

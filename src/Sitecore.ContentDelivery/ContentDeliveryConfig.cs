@@ -9,26 +9,26 @@ namespace Sitecore.ContentDelivery
     {
         public static void RegisterRoutes([NotNull] string basePath)
         {
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetBundle", basePath + "/get", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetBundle", basePath + "/get", new
             {
                 controller = "ContentDelivery",
                 action = "GetBundle"
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetDatabases", basePath + "/get/databases", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDatabases", basePath + "/get/databases", new
             {
                 controller = "ContentDelivery",
                 action = "GetDatabases"
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetDatabase", basePath + "/get/{databaseName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetDatabase", basePath + "/get/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetDatabase",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetChildren", basePath + "/get/children/{databaseName}/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetChildren", basePath + "/get/children/{databaseName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetChildren",
@@ -36,14 +36,14 @@ namespace Sitecore.ContentDelivery
                 itemName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetItems", basePath + "/get/items/{databaseName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItems", basePath + "/get/items/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItems",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetTemplate", basePath + "/get/template/{databaseName}/{*templateName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplate", basePath + "/get/template/{databaseName}/{*templateName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplate",
@@ -51,21 +51,21 @@ namespace Sitecore.ContentDelivery
                 templateName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetTemplates", basePath + "/get/templates/{databaseName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetTemplates", basePath + "/get/templates/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetTemplates",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.DumpDatabase", basePath + "/get/dump/{databaseName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DumpDatabase", basePath + "/get/dump/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "DumpDatabase",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.GetItem", basePath + "/get/item/{databaseName}/{*itemName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetItem", basePath + "/get/item/{databaseName}/{*itemName}", new
             {
                 controller = "ContentDelivery",
                 action = "GetItem",
@@ -73,14 +73,22 @@ namespace Sitecore.ContentDelivery
                 itemName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.PutItems", basePath + "/put/items/{databaseName}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.GetInsertOptions", basePath + "/get/insertoptions/{databaseName}/{*itemName}", new
+            {
+                controller = "ContentDelivery",
+                action = "GetInsertOptions",
+                databaseName = "",
+                itemName = ""
+            });
+
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.PutItems", basePath + "/put/items/{databaseName}", new
             {
                 controller = "ContentDelivery",
                 action = "SaveItems",
                 databaseName = ""
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.DeleteItems", basePath + "/delete/items/{databaseName}/{*itemUri}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.DeleteItems", basePath + "/delete/items/{databaseName}/{*itemUri}", new
             {
                 controller = "ContentDelivery",
                 action = "DeleteItems",
@@ -89,7 +97,7 @@ namespace Sitecore.ContentDelivery
 
             });
 
-            RouteTable.Routes.MapRoute(basePath + ".ContentDelivery.AddItems", basePath + "/put/item/{databaseName}/{*itemPath}", new
+            RouteTable.Routes.MapRoute("Sitecore.ContentDelivery.AddItems", basePath + "/put/item/{databaseName}/{*itemPath}", new
             {
                 controller = "ContentDelivery",
                 action = "AddItem",

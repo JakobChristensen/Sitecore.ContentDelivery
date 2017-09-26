@@ -160,6 +160,8 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             return output.ToContentResult();
         }
 
+        public override ActionResult GetInsertOptions(RequestParameters requestParameters, string itemName) => new HttpStatusCodeResult(HttpStatusCode.NotImplemented);
+
         public override ActionResult GetItem(RequestParameters requestParameters, string itemName)
         {
             var items = GetItemsByName(itemName).ToList();
@@ -563,6 +565,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
             output.WritePropertyString("icon16x16", item.Icon16X16);
             output.WritePropertyString("icon32x32", item.Icon32X32);
             output.WritePropertyString("path", item.Path);
+            output.WritePropertyString("longPath", item.Path);
             output.WritePropertyString("templateId", item.TemplateId.ToString("B").ToUpperInvariant());
             output.WritePropertyString("templateName", item.Template);
             output.WritePropertyString("childCount", item.ChildCount);

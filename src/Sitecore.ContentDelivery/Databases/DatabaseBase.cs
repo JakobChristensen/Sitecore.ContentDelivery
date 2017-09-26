@@ -1,4 +1,4 @@
-﻿// © 2015-2016 Sitecore Corporation A/S. All rights reserved.
+﻿// © 2015-2017 by Jakob Christensen. All rights reserved.
 
 using System.Collections.Generic;
 using System.Web;
@@ -9,7 +9,7 @@ namespace Sitecore.ContentDelivery.Databases
 {
     public abstract class DatabaseBase : IDatabase
     {
-        public string DatabaseName { get; protected set;  }
+        public string DatabaseName { get; protected set; }
 
         public IDictionary<string, string> RequestParameters { get; } = new Dictionary<string, string>();
 
@@ -21,11 +21,13 @@ namespace Sitecore.ContentDelivery.Databases
 
         public abstract ActionResult GetDatabase(RequestParameters requestParameters);
 
+        public abstract ActionResult GetInsertOptions(RequestParameters requestParameters, string itemName);
+
+        public abstract ActionResult GetItem(RequestParameters requestParameters, string itemName);
+
         public abstract ActionResult GetItems(RequestParameters requestParameters);
 
         public abstract ActionResult GetTemplate(RequestParameters requestParameters, string templateName);
-
-        public abstract ActionResult GetItem(RequestParameters requestParameters, string itemName);
 
         public abstract ActionResult GetTemplates(RequestParameters requestParameters);
 
