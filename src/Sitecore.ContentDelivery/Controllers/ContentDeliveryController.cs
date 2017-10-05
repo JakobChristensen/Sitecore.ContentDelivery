@@ -29,11 +29,6 @@ namespace Sitecore.ContentDelivery.Controllers
                 return actionResult;
             }
 
-            if (!itemPath.StartsWith("/"))
-            {
-                itemPath = "/" + itemPath;
-            }
-
             return database.AddItem(requestParameters, itemPath, template);
         }
 
@@ -166,7 +161,7 @@ namespace Sitecore.ContentDelivery.Controllers
         {
             var output = new JsonContentResultWriter(new StringWriter());
             output.WriteStartObject("metadata");
-            output.WritePropertyString("version", "1.0.0");
+            output.WritePropertyString("version", Constants.Version);
             output.WriteEndObject();
 
             output.WriteStartArray("databases");

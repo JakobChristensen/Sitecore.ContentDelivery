@@ -579,7 +579,7 @@ namespace Sitecore.ContentDelivery.Databases.FileDatabases
         protected virtual void WriteMetaData([NotNull] JsonTextWriter output)
         {
             output.WriteStartObject("metadata");
-            output.WritePropertyString("version", "1");
+            output.WritePropertyString("version", Constants.Version);
             output.WritePropertyString("user", "sitecore\\admin");
             output.WritePropertyString("language", "en");
             output.WriteEndObject();

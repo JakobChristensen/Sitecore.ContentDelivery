@@ -126,6 +126,7 @@
     <Compile Include="Databases\Formatters\IFieldValueFormatter.cs" />
     <Compile Include="Databases\FileDatabases\FileDatabaseField.cs" />
     <Compile Include="Databases\FileDatabases\FileDatabaseItem.cs" />
+    <Compile Include="Extensions\XmlTextWriterExtensions.cs" />
     <Compile Include="Extensions\JObjectExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Web\JsonContentResultWriter.cs" />

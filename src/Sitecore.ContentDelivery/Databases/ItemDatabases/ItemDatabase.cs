@@ -7,7 +7,9 @@ using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
+using System.Xml;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Sitecore.Configuration;
 using Sitecore.ContentDelivery.Extensions;
 using Sitecore.ContentDelivery.Web;
@@ -21,6 +23,7 @@ using Sitecore.Diagnostics;
 using Sitecore.Globalization;
 using Sitecore.Resources;
 using Sitecore.Resources.Media;
+using Sitecore.Text;
 using Sitecore.Web;
 using Sitecore.Web.UI;
 
@@ -46,6 +49,12 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             }
 
             var parentPath = itemPath.Left(n);
+
+            if (!ID.IsID(parentPath) && !parentPath.StartsWith("/", System.StringComparison.OrdinalIgnoreCase))
+            {
+                parentPath = "/" + parentPath;
+            }
+
             var parentItem = Database.GetItem(parentPath);
 
             if (parentItem == null)
@@ -548,6 +557,15 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                     }
                 }
 
+                var itemField = item.Fields[field.FieldId];
+                if (itemField != null && string.Equals(itemField.Type, "layout", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    // layout field needs special handling because of layout deltas
+                    var layoutFieldValue = GetLayoutFieldValue(item, field);
+                    LayoutField.SetFieldValue(itemField, layoutFieldValue);
+                    continue;
+                }
+
                 item[field.FieldId] = field.Value;
             }
 
@@ -748,6 +766,33 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
             }
         }
 
+        [NotNull]
+        protected virtual string ResolveItemFromIdOrName([NotNull] Database database, [CanBeNull] string id, [CanBeNull] string name)
+        {
+            if (!string.IsNullOrEmpty(id))
+            {
+                return id;
+            }
+
+            if (string.IsNullOrEmpty(name))
+            {
+                return string.Empty;
+            }
+
+            var items = database.GetItemsByName(name).ToArray();
+            if (items.Length == 1)
+            {
+                return items[0].ID.ToString();
+            }
+
+            if (items.Length > 1)
+            {
+                throw new System.InvalidOperationException("Ambigious item name: " + name);
+            }
+
+            throw new System.InvalidOperationException("Item not found: " + name);
+        }
+
         protected virtual void SetContext([NotNull] RequestParameters requestParameters)
         {
             if (!string.IsNullOrEmpty(requestParameters.Language))
@@ -918,7 +963,7 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
         protected virtual void WriteMetaData([NotNull] JsonTextWriter output)
         {
             output.WriteStartObject("metadata");
-            output.WritePropertyString("version", "1.0.0");
+            output.WritePropertyString("version", Constants.Version);
             output.WritePropertyString("user", Context.GetUserName());
             output.WritePropertyString("language", Context.Language.Name);
             output.WritePropertyString("host", WebUtil.GetServerUrl());
@@ -1031,6 +1076,86 @@ namespace Sitecore.ContentDelivery.Databases.ItemDatabases
                             return queryable.Where(item => item[fieldName] == value);
                     }
             }
+        }
+
+        [NotNull]
+        private string GetLayoutFieldValue([NotNull] Item item, [NotNull] FieldEditorField field)
+        {
+            if (field.Value.TrimStart().StartsWith("{"))
+            {
+                return GetLayoutFieldValueFromJson(item, field);
+            }
+
+            return field.Value;
+        }
+
+        [NotNull]
+        private string GetLayoutFieldValueFromJson([NotNull] Item item, [NotNull] FieldEditorField field)
+        {
+            var writer = new StringWriter();
+            var output = new XmlTextWriter(writer)
+            {
+                Formatting = System.Xml.Formatting.Indented
+            };
+
+            output.WriteStartElement("r");
+
+            var root = JObject.Parse(field.Value);
+            var devicesArray = root.Value<JArray>("devices");
+
+            foreach (var device in devicesArray.OfType<JObject>())
+            {
+                output.WriteStartElement("d");
+
+                output.WriteAttributeStringIf("id", ResolveItemFromIdOrName(item.Database, device.Value<string>("deviceId"), device.Value<string>("deviceName")));
+                output.WriteAttributeStringIf("l", ResolveItemFromIdOrName(item.Database, device.Value<string>("layoutId"), device.Value<string>("layoutName")));
+
+                foreach (var rendering in device.Value<JArray>("renderings").OfType<JObject>())
+                {
+                    var uniqueId = rendering.Value<string>("uniqueId");
+                    if (string.IsNullOrEmpty(uniqueId))
+                    {
+                        uniqueId = ID.NewID.ToString();
+                    }
+
+                    output.WriteStartElement("r");
+
+                    output.WriteAttributeString("id", ResolveItemFromIdOrName(item.Database, rendering.Value<string>("renderingId"), rendering.Value<string>("renderingName")));
+                    output.WriteAttributeString("uid", uniqueId);
+                    output.WriteAttributeString("ds", rendering.Value<string>("datasource"));
+                    output.WriteAttributeString("ph", rendering.Value<string>("placeholder"));
+
+                    output.WriteAttributeStringIf("cac", rendering.Value<bool>("cacheable"));
+                    output.WriteAttributeStringIf("vbd", rendering.Value<bool>("varyByData"));
+                    output.WriteAttributeStringIf("vbdev", rendering.Value<bool>("varyByDevice"));
+                    output.WriteAttributeStringIf("vbl", rendering.Value<bool>("varyByLogin"));
+                    output.WriteAttributeStringIf("vbp", rendering.Value<bool>("varyByParameters"));
+                    output.WriteAttributeStringIf("vbqs", rendering.Value<bool>("varyByQueryString"));
+                    output.WriteAttributeStringIf("vbu", rendering.Value<bool>("varyByUser"));
+
+                    var parametersArray = rendering.Value<JArray>("parameters");
+                    if (parametersArray != null && parametersArray.Count > 0)
+                    {
+                        var parameters = new UrlString();
+                        foreach (var parm in parametersArray.OfType<JObject>())
+                        {
+                            var key = parm.Value<string>("key");
+                            var value = parm.Value<string>("value") ?? string.Empty;
+                            parameters.Parameters[key] = value;
+                        }
+
+                        output.WriteAttributeString("par", parameters.ToString());
+                    }
+
+                    output.WriteEndElement();
+                }
+
+                output.WriteEndElement();
+            }
+
+            output.WriteEndElement();
+
+            return writer.ToString();
         }
 
         private class FieldEditorField

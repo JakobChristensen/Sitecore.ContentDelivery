@@ -6,5 +6,7 @@ namespace Sitecore.ContentDelivery
         public const string AppDataDatabasesDirectory = "/App_Data/Sitecore.ContentDelivery/Databases";
 
         public const string BasePath = "ContentDelivery.BasePath";
+
+        public const string Version = "1.0.1";
     }
 }
