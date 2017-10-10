@@ -7,6 +7,6 @@ namespace Sitecore.ContentDelivery
 
         public const string BasePath = "ContentDelivery.BasePath";
 
-        public const string Version = "1.0.1";
+        public const string Version = "1.0.2";
     }
 }
